@@ -154,6 +154,7 @@ class RewardModel2(nn.Module):
             "probability": p,
         }
 
+
 class RewardModel(nn.Module):
 
     def __init__(self,

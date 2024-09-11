@@ -214,6 +214,7 @@ def uni_preference(num, d):
     x = torch.rand(size=[num])
     return torch.stack([x, 1 - x], dim=1)
 
+
 def rdit_top_N(dataset, N_user = 5):
     tmp_user_dict = {}
     for i, x in enumerate(dataset['train']['worker']):
