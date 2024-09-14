@@ -15,8 +15,10 @@ from lora import LinearLayer_LoRA, convert_linear_layer_to_lora, only_optimize_l
 from utils import rdit_top_N
 
 # wandb is used as a logging tool. This is the initialization of wandb.
-wandb.init(project = 'ensemble reward model with LoRA')
-os.environ["WANDB_PROJECT"] = "ensemble reward model with LoRA"
+wandb_flag = False
+if wandb_flag:
+    wandb.init(project = 'ensemble reward model with LoRA')
+    os.environ["WANDB_PROJECT"] = "ensemble reward model with LoRA"
 np.random.seed(42)
 
 def main():
@@ -47,7 +49,7 @@ def main():
 
     # Build a reward model
     reward_model = RewardModel(tokenizer, model)
-    convert_linear_layer_to_lora(reward_model, '', lora_dim = 64, inds = N_user) # "attn."
+    convert_linear_layer_to_lora(reward_model, 'rwtransformer', lora_dim = 64, inds = N_user) # "attn."
     only_optimize_lora_parameters(reward_model)
     # Set part of the parameters fixed in the training of reward model
     # TODO: May not necessary
@@ -61,6 +63,10 @@ def main():
     #     if flag:
     #         p.requires_grad = False
     reward_model = reward_model.to(device)
+
+    for n, p in reward_model.named_parameters():
+        print(n, p.shape, p.requires_grad)
+
     # Set the optimizer. The following optimizer may not be optimal.
     # It just works in this program.
     # lr schedule is expected in the future.
@@ -68,7 +74,7 @@ def main():
 
     start_time = time.time()
     batch = 1
-    for epoch in range(2): # 2 epochs
+    for epoch in range(0): # 2 epochs
         # Shuffle
         train_set = dataset.shuffle()
         for i in range(train_set.num_rows // batch):
@@ -78,7 +84,7 @@ def main():
                     label = dataset[i * batch + j]['choice']
                     prompt = dataset[i * batch + j]['info']['post']
                     response = dataset[i * batch + j]['summaries'][(posi + label) % 2]['text']
-                    text.append(prompt + response)
+                    text.append(prompt + '[pad]' + response)
 
             p = []
             
@@ -99,9 +105,10 @@ def main():
             print("p:", p.shape)
             loss = - torch.mean(torch.log(p))
 
-            wandb.log({
-                'loss': loss.item(),
-            })
+            if wandb_flag:
+                wandb.log({
+                    'loss': loss.item(),
+                })
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -111,7 +118,8 @@ def main():
     end_time = time.time()
     print('time:', end_time - start_time)
 
-    wandb.finish()
+    if wandb_flag:
+        wandb.finish()
 
 
 if __name__ == '__main__':
