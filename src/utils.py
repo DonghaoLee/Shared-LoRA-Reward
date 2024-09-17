@@ -1,6 +1,9 @@
 import torch
 import numpy as np
 from lora import LinearLayer_LoRA
+from datasets import Dataset
+from typing import Callable, Literal, Optional, Union
+
 
 def evaluate(model, tokenizer, dataset, device, batch = 1, inds = 10):
     model.eval()
@@ -210,6 +213,7 @@ def gaussian_preference(num, d):
     y = torch.randn(size=[num, d])
     return x + y / 9
 
+
 def uni_preference(num, d):
     x = torch.rand(size=[num])
     return torch.stack([x, 1 - x], dim=1)
@@ -243,3 +247,96 @@ def rdit_top_N(dataset, N_user = 5):
         idx = np.concatenate([idx, np.random.choice(tmp_user_dict[x][1:], min_samples, replace = False)])
 
     return user_dict, dataset['train'].select(idx)
+
+
+def reddit_comp_top_N(dataset, N_worker=5, seed=42):
+    """ Filter the dataset to only include the top-N users with the most samples.
+    For the reddit TL;DR dataset, we will filter the dataset to only include the top-N users with the most samples on the training set.
+    Additionally, we will perform a downsampling to ensure that all top-N users have the same number of samples.
+    On the validation set, we will only include the samples from the same top-N on the training set and also perform the same downsampling.
+    Args:
+        dataset: The reddit TL;DR dataset.
+        N_worker: The number of top users to include.
+        seed: The random seed for reproducibility.
+    """
+    # Count the number of samples from each worker on the training/validation set
+    worker_count_train = {}
+    worker_count_valid = {}
+    for i in range(dataset['train'].num_rows):
+        worker = dataset['train'][i]['worker']
+        if worker not in worker_count_train:
+            worker_count_train[worker] = 0
+        worker_count_train[worker] += 1
+    for i in range(dataset['validation'].num_rows):
+        worker = dataset['validation'][i]['worker']
+        if worker not in worker_count_valid:
+            worker_count_valid[worker] = 0
+        worker_count_valid[worker] += 1
+
+    # Sort the users by the number of samples
+    sorted_workers_train = sorted(worker_count_train.items(), key=lambda x: x[1], reverse=True)
+    print(f"We will filter the dataset to only include the top-{N_worker} users with the most samples on the training set.")
+    print(f"[Train] Number of unique workers: {len(sorted_workers_train)}")
+    print(f"[Train] Top-5 workers: {sorted_workers_train[:5]}")
+
+    # Filter the dataset to only include the top-N users
+    top_N_workers = [worker for worker, _ in sorted_workers_train[:N_worker]]
+    filtered_trainset = dataset['train'].filter(lambda x: x['worker'] in top_N_workers)
+    filtered_validset = dataset['validation'].filter(lambda x: x['worker'] in top_N_workers)
+    print(f"Filtered training samples: {len(filtered_trainset)}")
+    print(f"Filtered validation samples: {len(filtered_validset)}")
+
+    # Perform downsampling to ensure that all top-N users have the same number of samples
+    min_samples_train = min([count for worker, count in sorted_workers_train[:N_worker]])
+    min_samples_valid = min([worker_count_valid[worker] for worker in top_N_workers])
+    print(f"Downsampling training set, preserve {min_samples_train} samples for each worker.")
+    print(f"Downsampling validation set, preserve {min_samples_valid} samples for each worker.")
+    downsampled_trainset = []
+    downsampled_validset = []
+    for worker in top_N_workers:
+        print(f"Worker {worker}")
+        worker_samples_train = filtered_trainset.filter(lambda x: x['worker'] == worker)
+        worker_samples_valid = filtered_validset.filter(lambda x: x['worker'] == worker)
+        downsampled_trainset.extend(worker_samples_train.shuffle(seed=seed).select(range(min_samples_train)))
+        downsampled_validset.extend(worker_samples_valid.shuffle(seed=seed).select(range(min_samples_valid)))
+    print(f"Downsampled training samples: {len(downsampled_trainset)}")
+    print(f"Downsampled validation samples: {len(downsampled_validset)}")
+
+    # Map the worker index to a unique integer index (from 0 to N_worker-1)
+    worker_index_map = {worker: i for i, worker in enumerate(top_N_workers)}
+    for i in range(len(downsampled_trainset)):
+        downsampled_trainset[i]['worker'] = worker_index_map[downsampled_trainset[i]['worker']]
+    for i in range(len(downsampled_validset)):
+        downsampled_validset[i]['worker'] = worker_index_map[downsampled_validset[i]['worker']]
+
+    # Convert the list of samples to a Hugging Face Dataset
+    downsampled_trainset = Dataset.from_list(downsampled_trainset)
+    downsampled_validset = Dataset.from_list(downsampled_validset)
+
+    return downsampled_trainset, downsampled_validset, worker_index_map
+
+
+def reddit_prompt_template(example, response_type: Literal["chosen", "rejected"]):
+    """Generate the prompt for the Reddit TL;DR dataset.
+    Args:
+        example: The example from the Reddit TL;DR dataset.
+        response_type: The type of response, either "chosen" or "rejected".
+    """
+    info = example['info']
+    summaries = example['summaries']
+    choice = example['choice']
+    worker = example['worker']
+
+    subreddit = info["subreddit"]
+    title = info["title"]
+    post = info["post"]
+    assert choice in [0, 1], "The choice must be either 0 or 1."
+
+    if response_type == "chosen":
+        summary = summaries[choice]['text']             # chosen response
+    else:
+        summary = summaries[1 - choice]['text']         # rejected response
+    
+    prompt = f"SUBREDDIT: r/{subreddit}\nTITLE: {title}\nPOST: {post}\nTL;DR: {summary}"
+    
+    return prompt
