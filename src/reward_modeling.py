@@ -208,14 +208,19 @@ if __name__ == "__main__":
     ##########
     # Training
     ##########
-    trainer = RewardTrainer(
-        model=model,
-        tokenizer=tokenizer,
-        args=config,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        peft_config=get_peft_config(model_config),
-    )
+    if args.selected_labeler == "personalized":
+        # TODO: Implement personalized LoRA
+        # Wrap model with personalized LoRA
+        raise NotImplementedError("Personalized LoRA is not implemented yet.")
+    else:
+        trainer = RewardTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            args=config,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            peft_config=get_peft_config(model_config),
+        )
     # Now you can print the trainable parameters
     trainer.model.print_trainable_parameters()
     for name, param in trainer.model.named_parameters():
