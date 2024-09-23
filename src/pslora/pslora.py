@@ -70,7 +70,10 @@ class LinearLayer_PSLoRA(nn.Module):
     def reset_parameters(self):
         # initialize A the same way as the default for nn.Linear and B to zero
         # https://github.com/microsoft/LoRA/blob/a0a92e0f26c067cf94747bdbf1ce73793fa44d19/loralib/layers.py#L124
-        nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+        if self.num_labelers <= 0:
+            nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+        else:
+            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
         nn.init.zeros_(self.lora_B.weight)
 
     def fuse_lora_weight(self):
@@ -98,9 +101,11 @@ class LinearLayer_PSLoRA(nn.Module):
         else:
             result = F.linear(input, self.weight, self.bias)
             torch_result_dtype = result.dtype
-            input = input.to(self.lora_A.dtype)
+            input = input.to(self.lora_B.weight.dtype)
             
             if self.num_labelers <= 0:
+                result = result + self.lora_B(self.lora_A(self.lora_dropout(input))) * self.lora_scaling
+            else:
                 # Ensure that labeler_index is a 1D tensor
                 if isinstance(self.labeler_index, int):
                     self.labeler_index = torch.tensor([self.labeler_index], device=input.device)
@@ -119,8 +124,6 @@ class LinearLayer_PSLoRA(nn.Module):
                 # result: (batch_size, seq_length, out_features)
                 
                 result = result + self.lora_B(torch.bmm(self.lora_dropout(input), labelers_A)) * self.lora_scaling
-            else:
-                result = result + self.lora_B(self.lora_A(self.lora_dropout(input))) * self.lora_scaling
 
             result = result.to(torch_result_dtype)
 

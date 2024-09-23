@@ -419,16 +419,43 @@ if __name__ == "__main__":
             peft_config=None,
         )
     else:
-        trainer = RewardTrainer(
+        # trainer = RewardTrainer(
+        #     model=model,
+        #     tokenizer=tokenizer,
+        #     args=config,
+        #     train_dataset=train_dataset,
+        #     eval_dataset=eval_dataset,
+        #     peft_config=get_peft_config(model_config),
+        # )
+        # # Now you can print the trainable parameters
+        # trainer.model.print_trainable_parameters()
+
+        print("LoRA Target Modules: ", model_config.lora_target_modules)
+
+        model = convert_linear_layer_to_lora(
+            model=model,
+            target_modules=model_config.lora_target_modules,
+            lora_r=model_config.lora_r,
+            lora_alpha=model_config.lora_alpha,
+            lora_dropout=model_config.lora_dropout,
+            num_labelers=-1)
+        
+        print("LoRA model")
+        print(model)
+        
+        only_optimize_lora_parameters(model)
+
+        data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
+        
+        trainer = PSRewardTrainer(
             model=model,
             tokenizer=tokenizer,
+            data_collator=data_collator,
             args=config,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            peft_config=get_peft_config(model_config),
+            peft_config=None,
         )
-        # Now you can print the trainable parameters
-        trainer.model.print_trainable_parameters()
 
     for name, param in trainer.model.named_parameters():
         if param.requires_grad:
