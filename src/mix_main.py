@@ -2,6 +2,7 @@ import time
 import os
 import wandb
 import logging
+import cProfile
 
 import torch
 import torch.nn as nn
@@ -15,7 +16,7 @@ from lora import LinearLayer_LoRA, convert_linear_layer_to_lora, only_optimize_l
 from utils import rdit_top_N
 
 # wandb is used as a logging tool. This is the initialization of wandb.
-wandb_flag = True
+wandb_flag = False
 if wandb_flag:
     wandb.init(project = 'federated LoRA', name = 'lr 1e-5, 2 epoch, batch 2')
     os.environ["WANDB_PROJECT"] = "federated LoRA"
@@ -70,10 +71,10 @@ def main():
     # Set the optimizer. The following optimizer may not be optimal.
     # It just works in this program.
     # lr schedule is expected in the future.
-    optimizer = torch.optim.Adam(reward_model.parameters(), lr = 0.00001, betas=(0.9, 0.95))
+    optimizer = torch.optim.Adam(reward_model.parameters(), lr = 0.00005, betas=(0.9, 0.95))
 
     start_time = time.time()
-    batch = 2
+    batch = 1
     for epoch in range(2): # 2 epochs
         # Shuffle
         train_set = dataset.shuffle()
@@ -112,6 +113,10 @@ def main():
             loss.backward()
             optimizer.step()
 
+            if i == 200:
+                break
+        break
+
         # torch.save(reward_model.state_dict(), 'ckpt/federated_lora_epoch_' + str(epoch) + '.ckpt') First, not save
 
     end_time = time.time()
@@ -122,4 +127,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    cProfile.run('main()')
