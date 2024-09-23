@@ -15,12 +15,18 @@
 import os
 import warnings
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import torch
+import torch.nn as nn
 from accelerate import PartialState, Accelerator
 from datasets import load_dataset
 from tqdm import tqdm
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, HfArgumentParser
+from transformers import (
+    PreTrainedModel,
+    PreTrainedTokenizerBase,
+)
 
 from trl import (
     ModelConfig,
@@ -34,11 +40,15 @@ from trl import (
 from trl.extras.dataset_formatting import conversations_formatting_function
 
 from utils import reddit_comp_top_N, reddit_prompt_template
+from pslora import LinearLayer_PSLoRA, convert_linear_layer_to_lora, only_optimize_lora_parameters
 
 
 tqdm.pandas()
 
 os.environ["WANDB_PROJECT"] = "ensemble reward model with LoRA"
+# os.environ["WANDB_PROJECT"] = "PSLoRA_RewardModel_Debugging"
+
+warnings.simplefilter("once")
 
 @dataclass
 class RewardScriptArguments:
@@ -66,6 +76,172 @@ class RewardScriptArguments:
         default="all",
         metadata={"help": "The selected labeler to use for the reward model. Default is all labelers. Options: all, [0-num_labelers]"},
     )
+
+
+@dataclass
+class RewardDataCollatorWithPadding:
+    r"""
+    Reward DataCollator class that pads the inputs to the maximum length of the batch.
+    Args:
+        tokenizer (`PreTrainedTokenizerBase`):
+            The tokenizer used for encoding the data.
+        padding (`Union[bool, str, `PaddingStrategy`]`, `optional`, defaults to `True`):
+            padding_strategy to pass to the tokenizer.
+        max_length (`Optional[int]`, `optional`, defaults to `None`):
+            The maximum length of the sequence to be processed.
+        pad_to_multiple_of (`Optional[int]`, `optional`, defaults to `None`):
+            If set will pad the sequence to a multiple of the provided value.
+        return_tensors (`str`, `optional`, defaults to `"pt"`):
+            The tensor type to use.
+    """
+
+    tokenizer: PreTrainedTokenizerBase
+    padding: Union[bool, str] = True
+    max_length: Optional[int] = None
+    pad_to_multiple_of: Optional[int] = None
+    return_tensors: str = "pt"
+
+    def __call__(self, features: List[Dict[str, Any]]) -> Dict[str, Any]:
+        features_chosen = []
+        features_rejected = []
+        margin = []
+        # check if we have a margin. If we do, we need to batch it as well
+        has_margin = "margin" in features[0]
+        for feature in features:
+            # check if the keys are named as expected
+            if (
+                "input_ids_chosen" not in feature
+                or "input_ids_rejected" not in feature
+                or "attention_mask_chosen" not in feature
+                or "attention_mask_rejected" not in feature
+                or "labeler_index" not in feature
+            ):
+                raise ValueError(
+                    "The features should include `input_ids_chosen`, `attention_mask_chosen`, `input_ids_rejected`, `attention_mask_rejected` and `labeler_index`"
+                )
+
+            features_chosen.append(
+                {
+                    "input_ids": feature["input_ids_chosen"],
+                    "attention_mask": feature["attention_mask_chosen"],
+                }
+            )
+            features_rejected.append(
+                {
+                    "input_ids": feature["input_ids_rejected"],
+                    "attention_mask": feature["attention_mask_rejected"],
+                }
+            )
+            if has_margin:
+                margin.append(feature["margin"])
+        batch_chosen = self.tokenizer.pad(
+            features_chosen,
+            padding=self.padding,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+            verbose=False,
+        )
+        batch_rejected = self.tokenizer.pad(
+            features_rejected,
+            padding=self.padding,
+            max_length=self.max_length,
+            pad_to_multiple_of=self.pad_to_multiple_of,
+            return_tensors=self.return_tensors,
+            verbose=False,
+        )
+        batch = {
+            "input_ids_chosen": batch_chosen["input_ids"],
+            "attention_mask_chosen": batch_chosen["attention_mask"],
+            "input_ids_rejected": batch_rejected["input_ids"],
+            "attention_mask_rejected": batch_rejected["attention_mask"],
+            "labeler_index": torch.tensor([feature["labeler_index"] for feature in features]),
+            "return_loss": True,
+        }
+        if has_margin:
+            margin = torch.tensor(margin, dtype=torch.float)
+            batch["margin"] = margin
+        return batch
+
+
+class PSRewardTrainer(RewardTrainer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def compute_loss(self, model, inputs, return_outputs=False):
+        """
+        Compute the loss for the model.
+        Args:
+            model (`torch.nn.Module`):
+                The model to compute the loss for.
+            inputs (`Dict[str, Union[torch.Tensor, Any]]`):
+                The inputs to the model.
+            return_outputs (`bool`, `optional`, defaults to `False`):
+                Whether to return the outputs of the model.
+        Returns:
+            `Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]`:
+                The loss of the model.
+        """
+        inputs = self._prepare_inputs(inputs)
+        with torch.cuda.amp.autocast(enabled=self.args.fp16):
+            outputs = model(**inputs)
+            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
+            loss = loss.mean() if self.args.n_gpu > 1 else loss
+        return (loss, outputs) if return_outputs else loss
+    
+    def compute_loss(
+        self,
+        model: Union[PreTrainedModel, nn.Module],
+        inputs: Dict[str, Union[torch.Tensor, Any]],
+        return_outputs=False,
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, Dict[str, torch.Tensor]]]:
+        # if not self.use_reward_data_collator:
+        #     warnings.warn(
+        #         "The current compute_loss is implemented for RewardDataCollatorWithPadding,"
+        #         " if you are using a custom data collator make sure you know what you are doing or"
+        #         " implement your own compute_loss method."
+        #     )
+        
+        #### Debugging ####
+        # print("\n######## Inputs ########")
+        # print(inputs)
+        # print(inputs["input_ids_chosen"].shape)
+        #### Debugging ####
+
+        # print("\n######## Chosen ########\n")
+        # Fine the sub-module that is a LinearLayer_PSLoRA
+        for name, module in model.named_modules():
+            if isinstance(module, LinearLayer_PSLoRA):
+                module.labeler_index = inputs["labeler_index"]
+
+        rewards_chosen = model(
+            input_ids=inputs["input_ids_chosen"],
+            attention_mask=inputs["attention_mask_chosen"],
+            return_dict=True,
+        )["logits"]
+        
+        # print("\n######## Rejectet ########\n")
+
+        rewards_rejected = model(
+            input_ids=inputs["input_ids_rejected"],
+            attention_mask=inputs["attention_mask_rejected"],
+            return_dict=True,
+        )["logits"]
+        # calculate loss, optionally modulate with margin
+        if "margin" in inputs:
+            loss = -nn.functional.logsigmoid(rewards_chosen - rewards_rejected - inputs["margin"]).mean()
+        else:
+            loss = -nn.functional.logsigmoid(rewards_chosen - rewards_rejected).mean()
+
+        if self.args.center_rewards_coefficient is not None:
+            loss += self.args.center_rewards_coefficient * torch.mean((rewards_chosen + rewards_rejected) ** 2)
+
+        if return_outputs:
+            return loss, {
+                "rewards_chosen": rewards_chosen,
+                "rewards_rejected": rewards_rejected,
+            }
+        return loss
 
 
 
@@ -130,6 +306,7 @@ if __name__ == "__main__":
             "attention_mask_chosen": [],
             "input_ids_rejected": [],
             "attention_mask_rejected": [],
+            "labeler_index": examples["worker"],
         }
         for chosen, rejected in zip(examples["chosen"], examples["rejected"]):
             tokenized_chosen = tokenizer(chosen, padding="longest", truncation=True, max_length=config.max_length)
@@ -189,7 +366,9 @@ if __name__ == "__main__":
                 num_proc=config.dataset_num_proc,
             )
             # Select the labeler
-            if args.selected_labeler != "all":
+            if args.selected_labeler == "all" or args.selected_labeler == "personalized":
+                pass
+            else:
                 print(f"Selecting labeler: {args.selected_labeler}")
                 raw_trainset = raw_trainset.filter(lambda x: x["worker"] == int(args.selected_labeler))
                 raw_testset = raw_testset.filter(lambda x: x["worker"] == int(args.selected_labeler))
@@ -205,13 +384,40 @@ if __name__ == "__main__":
         train_dataset = raw_trainset
         eval_dataset = raw_testset
 
+    # #### Debugging ####
+    # train_dataset = train_dataset.select(range(128))
+    # eval_dataset = eval_dataset.select(range(32))
+
     ##########
     # Training
     ##########
     if args.selected_labeler == "personalized":
-        # TODO: Implement personalized LoRA
-        # Wrap model with personalized LoRA
-        raise NotImplementedError("Personalized LoRA is not implemented yet.")
+        print("LoRA Target Modules: ", model_config.lora_target_modules)
+
+        model = convert_linear_layer_to_lora(
+            model=model,
+            target_modules=model_config.lora_target_modules,
+            lora_r=model_config.lora_r,
+            lora_alpha=model_config.lora_alpha,
+            lora_dropout=model_config.lora_dropout,
+            num_labelers=args.num_labelers)
+        
+        print("LoRA model")
+        print(model)
+        
+        only_optimize_lora_parameters(model)
+
+        data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
+        
+        trainer = PSRewardTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            args=config,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            peft_config=None,
+        )
     else:
         trainer = RewardTrainer(
             model=model,
@@ -221,18 +427,19 @@ if __name__ == "__main__":
             eval_dataset=eval_dataset,
             peft_config=get_peft_config(model_config),
         )
-    # Now you can print the trainable parameters
-    trainer.model.print_trainable_parameters()
+        # Now you can print the trainable parameters
+        trainer.model.print_trainable_parameters()
+
     for name, param in trainer.model.named_parameters():
         if param.requires_grad:
-            print(f"LoRA applied to: {name}")
+            print(f"Activate Layers: {name}")
+
     trainer.train()
 
     ###########################
     # Save model and evaluation
     ###########################
-    trainer.save_model(config.output_dir)
     metrics = trainer.evaluate()
     trainer.log_metrics("eval", metrics)
     trainer.save_metrics("eval", metrics)
-    trainer.save_model(config.output_dir)
+    # trainer.save_model(config.output_dir)

@@ -15,7 +15,7 @@ from peft import LoraModel, LoraConfig
 from peft.tuners.lora import LoraLayer
 from peft.utils import PeftType
 from peft.tuners.tuners_utils import BaseTunerLayer, check_adapters_to_merge
-from peft.utils.integrations import dequantize_module_weight, gather_params_ctx, get_bnb_param_type
+from peft.utils.integrations import dequantize_module_weight, gather_params_ctx
 from peft.utils.other import transpose
 
 from .config import PSLoraConfig
