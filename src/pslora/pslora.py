@@ -30,6 +30,7 @@ class LinearLayer_PSLoRA(nn.Module):
         super(LinearLayer_PSLoRA, self).__init__()
         self.weight = weight
         self.bias = bias
+        self.num_labelers = num_labelers
         self.labeler_index = None  # Labelers being activated in the forward pass (per batch)
 
         if lora_r <= 0:
@@ -41,8 +42,10 @@ class LinearLayer_PSLoRA(nn.Module):
         except:
             out_features, in_features = weight.shape
         
-        
-        self.lora_A = nn.Parameter(torch.zeros(num_labelers, in_features, lora_r))
+        if num_labelers <= 0:
+            self.lora_A = nn.Linear(in_features, lora_r, bias=False)
+        else:
+            self.lora_A = nn.Parameter(torch.zeros(num_labelers, in_features, lora_r))
         # self.lora_B = nn.Parameter(torch.zeros(lora_r, out_features))
         self.lora_B = nn.Linear(lora_r, out_features, bias=False)
         self.lora_scaling = lora_alpha / lora_r
@@ -95,26 +98,30 @@ class LinearLayer_PSLoRA(nn.Module):
         else:
             result = F.linear(input, self.weight, self.bias)
             torch_result_dtype = result.dtype
-
             input = input.to(self.lora_A.dtype)
-            # Ensure that labeler_index is a 1D tensor
-            if isinstance(self.labeler_index, int):
-                self.labeler_index = torch.tensor([self.labeler_index], device=input.device)
-            self.labeler_index = self.labeler_index.view(-1)
-            # Handle potential broadcasting
-            if self.labeler_index.size(0) == 1 and input.size(0) > 1:
-                self.labeler_index = self.labeler_index.expand(input.size(0))     # Expand the labeler_index to match the batch size
-            # Select the appropriate A matrices for each sample in the batch
-            batch_size = input.size(0)
-            labelers_A = self.lora_A[self.labeler_index]
-
-            # input: (batch_size, seq_length, in_features)
-            # labelers_A: (batch_size, in_features, r)
-            # lora_A: (batch_size, seq_length, r) (after torch.bmm)
-            # lora_B: nn.Linear(r, out_features)
-            # result: (batch_size, seq_length, out_features)
             
-            result = result + self.lora_B(torch.bmm(self.lora_dropout(input), labelers_A)) * self.lora_scaling
+            if self.num_labelers <= 0:
+                # Ensure that labeler_index is a 1D tensor
+                if isinstance(self.labeler_index, int):
+                    self.labeler_index = torch.tensor([self.labeler_index], device=input.device)
+                self.labeler_index = self.labeler_index.view(-1)
+                # Handle potential broadcasting
+                if self.labeler_index.size(0) == 1 and input.size(0) > 1:
+                    self.labeler_index = self.labeler_index.expand(input.size(0))     # Expand the labeler_index to match the batch size
+                # Select the appropriate A matrices for each sample in the batch
+                batch_size = input.size(0)
+                labelers_A = self.lora_A[self.labeler_index]
+
+                # input: (batch_size, seq_length, in_features)
+                # labelers_A: (batch_size, in_features, r)
+                # lora_A: (batch_size, seq_length, r) (after torch.bmm)
+                # lora_B: nn.Linear(r, out_features)
+                # result: (batch_size, seq_length, out_features)
+                
+                result = result + self.lora_B(torch.bmm(self.lora_dropout(input), labelers_A)) * self.lora_scaling
+            else:
+                result = result + self.lora_B(self.lora_A(self.lora_dropout(input))) * self.lora_scaling
+
             result = result.to(torch_result_dtype)
 
             return result
