@@ -167,27 +167,6 @@ class RewardDataCollatorWithPadding:
 class PSRewardTrainer(RewardTrainer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-    def compute_loss(self, model, inputs, return_outputs=False):
-        """
-        Compute the loss for the model.
-        Args:
-            model (`torch.nn.Module`):
-                The model to compute the loss for.
-            inputs (`Dict[str, Union[torch.Tensor, Any]]`):
-                The inputs to the model.
-            return_outputs (`bool`, `optional`, defaults to `False`):
-                Whether to return the outputs of the model.
-        Returns:
-            `Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]]`:
-                The loss of the model.
-        """
-        inputs = self._prepare_inputs(inputs)
-        with torch.cuda.amp.autocast(enabled=self.args.fp16):
-            outputs = model(**inputs)
-            loss = outputs["loss"] if isinstance(outputs, dict) else outputs[0]
-            loss = loss.mean() if self.args.n_gpu > 1 else loss
-        return (loss, outputs) if return_outputs else loss
     
     def compute_loss(
         self,
@@ -201,14 +180,7 @@ class PSRewardTrainer(RewardTrainer):
         #         " if you are using a custom data collator make sure you know what you are doing or"
         #         " implement your own compute_loss method."
         #     )
-        
-        #### Debugging ####
-        # print("\n######## Inputs ########")
-        # print(inputs)
-        # print(inputs["input_ids_chosen"].shape)
-        #### Debugging ####
 
-        # print("\n######## Chosen ########\n")
         # Fine the sub-module that is a LinearLayer_PSLoRA
         for name, module in model.named_modules():
             if isinstance(module, LinearLayer_PSLoRA):
@@ -219,14 +191,12 @@ class PSRewardTrainer(RewardTrainer):
             attention_mask=inputs["attention_mask_chosen"],
             return_dict=True,
         )["logits"]
-        
-        # print("\n######## Rejectet ########\n")
-
         rewards_rejected = model(
             input_ids=inputs["input_ids_rejected"],
             attention_mask=inputs["attention_mask_rejected"],
             return_dict=True,
         )["logits"]
+
         # calculate loss, optionally modulate with margin
         if "margin" in inputs:
             loss = -nn.functional.logsigmoid(rewards_chosen - rewards_rejected - inputs["margin"]).mean()
@@ -242,6 +212,25 @@ class PSRewardTrainer(RewardTrainer):
                 "rewards_rejected": rewards_rejected,
             }
         return loss
+    
+
+    def evaluate(self, *args, **kwargs):
+        metrics = super().evaluate(*args, **kwargs)
+        
+        if isinstance(kwargs["eval_dataset"], dict):
+            # Get the name of each fine-grained evaluation subset
+            eval_subset_names = list(kwargs["eval_dataset"].keys())
+            # Get the number of examples in each fine-grained evaluation subset
+            eval_subset_sizes = [len(kwargs["eval_dataset"][eval_subset_name]) for eval_subset_name in eval_subset_names]
+            # Get the accuracy of each fine-grained evaluation subset from the metrics
+            eval_subset_accuracies = [metrics[f"eval_{eval_subset_name}_accuracy"] for eval_subset_name in eval_subset_names]
+            # Get the loss of each fine-grained evaluation subset from the metrics
+            eval_subset_losses = [metrics[f"eval_{eval_subset_name}_loss"] for eval_subset_name in eval_subset_names]
+            # Get the average accuracy and loss of all fine-grained evaluation subsets, weighted by the number of examples
+            metrics["eval_all_accuracy"] = sum([size * accuracy for size, accuracy in zip(eval_subset_sizes, eval_subset_accuracies)]) / sum(eval_subset_sizes)
+            metrics["eval_all_loss"] = sum([size * loss for size, loss in zip(eval_subset_sizes, eval_subset_losses)]) / sum(eval_subset_sizes)
+
+        return metrics
 
 
 
@@ -298,7 +287,7 @@ if __name__ == "__main__":
     # Load and preprocess dataset
     #############################
     raw_datasets = load_dataset(args.dataset_name, args.dataset_subset)
-    raw_trainset, raw_testset, worker_dict = reddit_comp_top_N(raw_datasets, args.num_labelers)
+    raw_trainset, raw_testset, worker_dict, fine_grained_validset = reddit_comp_top_N(raw_datasets, args.num_labelers)
 
     def preprocess_function(examples):
         new_examples = {
@@ -351,9 +340,19 @@ if __name__ == "__main__":
                            "rejected": reddit_prompt_template(x, "rejected")},
                 num_proc=config.dataset_num_proc
             )
+            for name, raw_validset in fine_grained_validset.items():
+                fine_grained_validset[name] = raw_validset.map(
+                    lambda x: {"chosen": reddit_prompt_template(x, "chosen"),
+                               "rejected": reddit_prompt_template(x, "rejected")},
+                    num_proc=config.dataset_num_proc
+                )
+            
             # Remove unnecessary columns (specific to the Reddit TL;DR dataset)
             raw_trainset = raw_trainset.remove_columns(["info", "summaries", "batch", "split", "extra"])
             raw_testset = raw_testset.remove_columns(["info", "summaries", "batch", "split", "extra"])
+            for name, raw_validset in fine_grained_validset.items():
+                fine_grained_validset[name] = raw_validset.remove_columns(["info", "summaries", "batch", "split", "extra"])
+            
             # Tokenize inputs
             raw_trainset = raw_trainset.map(
                 preprocess_function,
@@ -365,6 +364,12 @@ if __name__ == "__main__":
                 batched=True,
                 num_proc=config.dataset_num_proc,
             )
+            for name, raw_validset in fine_grained_validset.items():
+                fine_grained_validset[name] = raw_validset.map(
+                    preprocess_function,
+                    batched=True,
+                    num_proc=config.dataset_num_proc,
+                )
             # Select the labeler
             if args.selected_labeler == "all" or args.selected_labeler == "personalized":
                 pass
@@ -372,17 +377,23 @@ if __name__ == "__main__":
                 print(f"Selecting labeler: {args.selected_labeler}")
                 raw_trainset = raw_trainset.filter(lambda x: x["worker"] == int(args.selected_labeler))
                 raw_testset = raw_testset.filter(lambda x: x["worker"] == int(args.selected_labeler))
+            
             # TODO: Filter out examples that are too long
             # shuffle the dataset
             raw_trainset = raw_trainset.shuffle()
             raw_testset = raw_testset.shuffle()
+            for name, raw_validset in fine_grained_validset.items():
+                fine_grained_validset[name] = raw_validset.shuffle()
 
     if args.apply_chat_template:
         train_dataset = raw_datasets[args.dataset_train_split]
         eval_dataset = raw_datasets[args.dataset_test_split]
     else:
         train_dataset = raw_trainset
-        eval_dataset = raw_testset
+        if args.selected_labeler in ["all", "personalized"]:
+            eval_dataset = fine_grained_validset
+        else:
+            eval_dataset = raw_testset
 
     # #### Debugging ####
     # train_dataset = train_dataset.select(range(128))

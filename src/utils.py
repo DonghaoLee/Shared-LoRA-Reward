@@ -313,7 +313,12 @@ def reddit_comp_top_N(dataset, N_worker=5, seed=42):
     downsampled_trainset = Dataset.from_list(downsampled_trainset)
     downsampled_validset = Dataset.from_list(downsampled_validset)
 
-    return downsampled_trainset, downsampled_validset, worker_index_map
+    # Construct fine-grained validset for each worker from the downsampled validset
+    fine_grained_validset = {}
+    for worker_idx in range(N_worker):
+        fine_grained_validset[f"labeler{worker_idx}"] = downsampled_validset.filter(lambda x: x['worker'] == worker_idx)
+
+    return downsampled_trainset, downsampled_validset, worker_index_map, fine_grained_validset
 
 
 def reddit_prompt_template(example, response_type: Literal["chosen", "rejected"]):
