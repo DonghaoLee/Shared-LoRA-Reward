@@ -226,25 +226,6 @@ class PSRewardTrainer(RewardTrainer):
                 "rewards_rejected": rewards_rejected,
             }
         return loss
-    
-
-    def evaluate(self, *args, **kwargs):
-        metrics = super().evaluate(*args, **kwargs)
-        
-        if isinstance(self.eval_dataset, dict):
-            # Get the name of each fine-grained evaluation subset
-            eval_subset_names = list(self.eval_dataset.keys())
-            # Get the number of examples in each fine-grained evaluation subset
-            eval_subset_sizes = [len(self.eval_dataset[eval_subset_name]) for eval_subset_name in eval_subset_names]
-            # Get the accuracy of each fine-grained evaluation subset from the metrics
-            eval_subset_accuracies = [metrics[f"eval_{eval_subset_name}_accuracy"] for eval_subset_name in eval_subset_names]
-            # Get the loss of each fine-grained evaluation subset from the metrics
-            eval_subset_losses = [metrics[f"eval_{eval_subset_name}_loss"] for eval_subset_name in eval_subset_names]
-            # Get the average accuracy and loss of all fine-grained evaluation subsets, weighted by the number of examples
-            metrics["eval_all_accuracy"] = sum([size * accuracy for size, accuracy in zip(eval_subset_sizes, eval_subset_accuracies)]) / sum(eval_subset_sizes)
-            metrics["eval_all_loss"] = sum([size * loss for size, loss in zip(eval_subset_sizes, eval_subset_losses)]) / sum(eval_subset_sizes)
-
-        return metrics
 
     def visualize_samples(self, num_print_samples: int):
         """
@@ -419,15 +400,13 @@ if __name__ == "__main__":
     else:
         train_dataset = raw_trainset
         if args.selected_labeler in ["all", "personalized"]:
-            eval_dataset = fine_grained_validset
+            # eval_dataset = fine_grained_validset
+            # eval_dataset["all"] = raw_testset
+            eval_dataset = raw_testset
         else:
             eval_dataset = raw_testset
     print("Train Dataset: ", train_dataset)
     print("Eval Dataset: ", eval_dataset)
-
-    # #### Debugging ####
-    # train_dataset = train_dataset.select(range(128))
-    # eval_dataset = eval_dataset.select(range(32))
 
     ######################
     # Model Initialization
@@ -482,13 +461,26 @@ if __name__ == "__main__":
             tokenizer=tokenizer,
             data_collator=data_collator,
             args=config,
-            train_dataset=train_dataset,
+            train_dataset=None,
             eval_dataset=eval_dataset,
             peft_config=None,
         )
         metrics = trainer.evaluate()
+        if isinstance(eval_dataset, dict):
+            # Get the name of each fine-grained evaluation subset
+            eval_subset_names = list(eval_dataset.keys())
+            # Get the number of examples in each fine-grained evaluation subset
+            eval_subset_sizes = [len(eval_dataset[eval_subset_name]) for eval_subset_name in eval_subset_names]
+            # Get the accuracy of each fine-grained evaluation subset from the metrics
+            eval_subset_accuracies = [metrics[f"eval_{eval_subset_name}_accuracy"] for eval_subset_name in eval_subset_names]
+            # Get the loss of each fine-grained evaluation subset from the metrics
+            eval_subset_losses = [metrics[f"eval_{eval_subset_name}_loss"] for eval_subset_name in eval_subset_names]
+            # Get the average accuracy and loss of all fine-grained evaluation subsets, weighted by the number of examples
+            metrics["eval_all_accuracy"] = sum([size * accuracy for size, accuracy in zip(eval_subset_sizes, eval_subset_accuracies)]) / sum(eval_subset_sizes)
+            metrics["eval_all_loss"] = sum([size * loss for size, loss in zip(eval_subset_sizes, eval_subset_losses)]) / sum(eval_subset_sizes)
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
+        print(metrics)
         exit()
 
     ##########

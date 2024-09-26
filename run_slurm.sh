@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=32
-#SBATCH --gres=gpu:2
-#SBATCH --constraint=a6000
+#SBATCH --gres=gpu:1
+#SBATCH --constraint=a40
 #SBATCH --partition=gpu
 #SBATCH --time=10:00:00
 #SBATCH --output=slurm/lora-rm-%j.out
@@ -14,4 +14,4 @@
 source ~/.bashrc
 source /p/finetunellm/anaconda3/bin/activate /p/finetunellm/anaconda3
 
-bash run_reward_modeling.sh
+bash eval_reward_modeling.sh

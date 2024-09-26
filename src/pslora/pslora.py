@@ -34,6 +34,7 @@ class LinearLayer_PSLoRA(nn.Module):
         self.num_labelers = num_labelers
         self.lora_type = lora_type
         self.labeler_index = None  # Labelers being activated in the forward pass (per batch)
+        self.debug_mode = False
 
         if lora_r <= 0:
             raise ValueError("You are training to use LoRA, whose reduced dim should be larger than 1")
@@ -124,9 +125,10 @@ class LinearLayer_PSLoRA(nn.Module):
 
     def forward(self, input: torch.Tensor) -> torch.Tensor:
         
-        # print("######## LinearLayer_PSLoRA.forward ########")
-        # print("labeler_index:", self.labeler_index)
-        # print("input shape:", input.shape)
+        if self.debug_mode:
+            print("######## LinearLayer_PSLoRA.forward ########")
+            print(f"[Device{input.device}] labeler_index: {self.labeler_index}")
+            # print("input shape:", input.shape)
 
         if self.fuse_lora:
             return F.linear(input, self.weight, self.bias)
@@ -144,12 +146,22 @@ class LinearLayer_PSLoRA(nn.Module):
                     result = result + self.lora_B(self.lora_A(self.lora_dropout(input)) @ torch.diag(self.lora_singular)) * self.lora_scaling
             else:
                 # Ensure that labeler_index is a 1D tensor
+                if self.debug_mode:
+                    print(f"[Device{input.device}] After getting base model's result, labeler_index: {self.labeler_index}")
+                
                 if isinstance(self.labeler_index, int):
                     self.labeler_index = torch.tensor([self.labeler_index], device=input.device)
                 self.labeler_index = self.labeler_index.view(-1)
+                
+                if self.debug_mode:
+                    print(f"[Device{input.device}] After view(-1), labeler_index: {self.labeler_index}")
+                
                 # Handle potential broadcasting
                 if self.labeler_index.size(0) == 1 and input.size(0) > 1:
                     self.labeler_index = self.labeler_index.expand(input.size(0))     # Expand the labeler_index to match the batch size
+                
+                if self.debug_mode:
+                    print(f"[Device{input.device}] After broadcasting, labeler_index: {self.labeler_index}")
                 
                 if self.lora_type == 'lora':
                     # Select the appropriate A matrices for each sample in the batch
