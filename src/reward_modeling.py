@@ -19,6 +19,8 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
+from safetensors import safe_open
+from safetensors.torch import load_file
 from accelerate import PartialState, Accelerator
 from datasets import load_dataset
 from tqdm import tqdm
@@ -75,6 +77,18 @@ class RewardScriptArguments:
     selected_labeler: str = field(
         default="all",
         metadata={"help": "The selected labeler to use for the reward model. Default is all labelers. Options: all, [0-num_labelers]"},
+    )
+    lora_type: str = field(
+        default="lora",
+        metadata={"help": "The type of LoRA to use. Options: pslora, kernel, svd"},
+    )
+    eval_mode: bool = field(
+        default=False,
+        metadata={"help": "Whether to train or evaluate the model. If True, only evaluate the model."},
+    )
+    checkpoint_paths: Optional[List[str]] = field(
+        default=None,
+        metadata={"help": ("Path of all the safetensor files.")},
     )
 
 
@@ -217,11 +231,11 @@ class PSRewardTrainer(RewardTrainer):
     def evaluate(self, *args, **kwargs):
         metrics = super().evaluate(*args, **kwargs)
         
-        if isinstance(kwargs["eval_dataset"], dict):
+        if isinstance(self.eval_dataset, dict):
             # Get the name of each fine-grained evaluation subset
-            eval_subset_names = list(kwargs["eval_dataset"].keys())
+            eval_subset_names = list(self.eval_dataset.keys())
             # Get the number of examples in each fine-grained evaluation subset
-            eval_subset_sizes = [len(kwargs["eval_dataset"][eval_subset_name]) for eval_subset_name in eval_subset_names]
+            eval_subset_sizes = [len(self.eval_dataset[eval_subset_name]) for eval_subset_name in eval_subset_names]
             # Get the accuracy of each fine-grained evaluation subset from the metrics
             eval_subset_accuracies = [metrics[f"eval_{eval_subset_name}_accuracy"] for eval_subset_name in eval_subset_names]
             # Get the loss of each fine-grained evaluation subset from the metrics
@@ -231,6 +245,20 @@ class PSRewardTrainer(RewardTrainer):
             metrics["eval_all_loss"] = sum([size * loss for size, loss in zip(eval_subset_sizes, eval_subset_losses)]) / sum(eval_subset_sizes)
 
         return metrics
+
+    def visualize_samples(self, num_print_samples: int):
+        """
+        Visualize the reward model logits prediction
+
+        Args:
+            num_print_samples (`int`, defaults to `4`):
+                The number of samples to print. Set to `-1` to print all samples.
+        """
+        if isinstance(self.eval_dataset, dict):
+            # TODO: Implement visualization for fine-grained evaluation subsets
+            pass
+        else:
+            super().visualize_samples(num_print_samples)
 
 
 
@@ -394,32 +422,81 @@ if __name__ == "__main__":
             eval_dataset = fine_grained_validset
         else:
             eval_dataset = raw_testset
+    print("Train Dataset: ", train_dataset)
+    print("Eval Dataset: ", eval_dataset)
 
     # #### Debugging ####
     # train_dataset = train_dataset.select(range(128))
     # eval_dataset = eval_dataset.select(range(32))
 
-    ##########
-    # Training
-    ##########
+    ######################
+    # Model Initialization
+    ######################
     if args.selected_labeler == "personalized":
+        """
+        Personalized Reward Model: Train a partial separate/shared reward model for each labeler.
+        """
         print("LoRA Target Modules: ", model_config.lora_target_modules)
-
+        print("LoRA Type: ", args.lora_type)
         model = convert_linear_layer_to_lora(
             model=model,
             target_modules=model_config.lora_target_modules,
             lora_r=model_config.lora_r,
             lora_alpha=model_config.lora_alpha,
             lora_dropout=model_config.lora_dropout,
-            num_labelers=args.num_labelers)
-        
+            num_labelers=args.num_labelers,
+            lora_type=args.lora_type)
         print("LoRA model")
         print(model)
-        
-        only_optimize_lora_parameters(model)
+    else:
+        print("LoRA Target Modules: ", model_config.lora_target_modules)
+        model = convert_linear_layer_to_lora(
+            model=model,
+            target_modules=model_config.lora_target_modules,
+            lora_r=model_config.lora_r,
+            lora_alpha=model_config.lora_alpha,
+            lora_dropout=model_config.lora_dropout,
+            num_labelers=-1)
+        print("LoRA model")
+        print(model)
 
+    
+    if args.eval_mode:
+        # Load the model from the output directory
+        def load_multiple_safetensor_checkpoints(model, checkpoint_paths):
+            combined_state_dict = {}
+            
+            for checkpoint_path in checkpoint_paths:
+                print(f"Loading checkpoint from {checkpoint_path}")
+                state_dict = load_file(checkpoint_path)
+                combined_state_dict.update(state_dict)
+            
+            # Load the combined state dict into your model
+            model.load_state_dict(combined_state_dict)
+            
+            return model
+        model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
         data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
-        
+        trainer = PSRewardTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            data_collator=data_collator,
+            args=config,
+            train_dataset=train_dataset,
+            eval_dataset=eval_dataset,
+            peft_config=None,
+        )
+        metrics = trainer.evaluate()
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
+        exit()
+
+    ##########
+    # Training
+    ##########
+    if args.selected_labeler == "personalized":
+        only_optimize_lora_parameters(model)
+        data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
         trainer = PSRewardTrainer(
             model=model,
             tokenizer=tokenizer,
@@ -440,24 +517,9 @@ if __name__ == "__main__":
         # )
         # # Now you can print the trainable parameters
         # trainer.model.print_trainable_parameters()
-
-        print("LoRA Target Modules: ", model_config.lora_target_modules)
-
-        model = convert_linear_layer_to_lora(
-            model=model,
-            target_modules=model_config.lora_target_modules,
-            lora_r=model_config.lora_r,
-            lora_alpha=model_config.lora_alpha,
-            lora_dropout=model_config.lora_dropout,
-            num_labelers=-1)
-        
-        print("LoRA model")
-        print(model)
         
         only_optimize_lora_parameters(model)
-
         data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
-        
         trainer = PSRewardTrainer(
             model=model,
             tokenizer=tokenizer,
@@ -480,4 +542,5 @@ if __name__ == "__main__":
     metrics = trainer.evaluate()
     trainer.log_metrics("eval", metrics)
     trainer.save_metrics("eval", metrics)
-    # trainer.save_model(config.output_dir)
+    if config.save_strategy != "epoch":
+        trainer.save_model(config.output_dir)     # Save the model. If we save checkpoint per epoch, we don't need to save the model here.
