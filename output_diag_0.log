@@ -1,568 +1,0 @@
-nohup: ignoring input
-7707
-[2024-09-27 05:40:34,388] [INFO] [real_accelerator.py:203:get_accelerator] Setting ds_accelerator to cuda (auto detect)
-W0927 05:40:37.756000 140287244960960 torch/distributed/run.py:779] 
-W0927 05:40:37.756000 140287244960960 torch/distributed/run.py:779] *****************************************
-W0927 05:40:37.756000 140287244960960 torch/distributed/run.py:779] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
-W0927 05:40:37.756000 140287244960960 torch/distributed/run.py:779] *****************************************
-[2024-09-27 05:40:44,782] [INFO] [real_accelerator.py:203:get_accelerator] Setting ds_accelerator to cuda (auto detect)
-[2024-09-27 05:40:44,852] [INFO] [real_accelerator.py:203:get_accelerator] Setting ds_accelerator to cuda (auto detect)
-[2024-09-27 05:40:47,375] [INFO] [comm.py:652:init_distributed] cdb=None
-[2024-09-27 05:40:47,376] [INFO] [comm.py:652:init_distributed] cdb=None
-[2024-09-27 05:40:47,376] [INFO] [comm.py:683:init_distributed] Initializing TorchBackend in DeepSpeed with backend nccl
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
-  warnings.warn(
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
-  warnings.warn(
-Some weights of GPTJForSequenceClassification were not initialized from the model checkpoint at EleutherAI/gpt-j-6b and are newly initialized: ['score.weight']
-You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
-Some weights of GPTJForSequenceClassification were not initialized from the model checkpoint at EleutherAI/gpt-j-6b and are newly initialized: ['score.weight']
-You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
-/home/donghao_dev/project/Shared-LoRA-Reward/src/reward_modeling.py:277: UserWarning: pad_token_id is None, setting pad_token_id to eos_token_id
-  warnings.warn("pad_token_id is None, setting pad_token_id to eos_token_id")
-/home/donghao_dev/project/Shared-LoRA-Reward/src/reward_modeling.py:287: UserWarning: No chat template found. Directly concatenate the prompt and the response.
-  warnings.warn("No chat template found. Directly concatenate the prompt and the response.")
-/home/donghao_dev/project/Shared-LoRA-Reward/src/reward_modeling.py:277: UserWarning: pad_token_id is None, setting pad_token_id to eos_token_id
-  warnings.warn("pad_token_id is None, setting pad_token_id to eos_token_id")
-/home/donghao_dev/project/Shared-LoRA-Reward/src/reward_modeling.py:287: UserWarning: No chat template found. Directly concatenate the prompt and the response.
-  warnings.warn("No chat template found. Directly concatenate the prompt and the response.")
-We will filter the dataset to only include the top-5 users with the most samples on the training set.
-[Train] Number of unique workers: 53
-[Train] Top-5 workers: [('KZL1qeRzHNYSfDAuOctL1iyVV8WC5N', 12985), ('ZzGCcAhvqF0HnKxNsUjtJFadcZdyZj', 6296), ('p4Oh7rUGyLe1EpilJFWr9sPDpkO016', 5633), ('qo6WIyEh27cwAjWpA3Q60J7NaDxzQJ', 5547), ('zKV8BFGy60O0q7102ALF84S6Jo5i4q', 5373)]
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/datasets/utils/_dill.py:379: DeprecationWarning: co_lnotab is deprecated, use co_lines instead.
-  obj.co_lnotab,  # for < python 3.10 [not counted in args]
-Filtered training samples: 35834
-Filtered validation samples: 15421
-Downsampling training set, preserve 5373 samples for each worker.
-Downsampling validation set, preserve 1238 samples for each worker.
-Worker KZL1qeRzHNYSfDAuOctL1iyVV8WC5N
-We will filter the dataset to only include the top-5 users with the most samples on the training set.
-[Train] Number of unique workers: 53
-[Train] Top-5 workers: [('KZL1qeRzHNYSfDAuOctL1iyVV8WC5N', 12985), ('ZzGCcAhvqF0HnKxNsUjtJFadcZdyZj', 6296), ('p4Oh7rUGyLe1EpilJFWr9sPDpkO016', 5633), ('qo6WIyEh27cwAjWpA3Q60J7NaDxzQJ', 5547), ('zKV8BFGy60O0q7102ALF84S6Jo5i4q', 5373)]
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/datasets/utils/_dill.py:379: DeprecationWarning: co_lnotab is deprecated, use co_lines instead.
-  obj.co_lnotab,  # for < python 3.10 [not counted in args]
-Filtered training samples: 35834
-Filtered validation samples: 15421
-Downsampling training set, preserve 5373 samples for each worker.
-Downsampling validation set, preserve 1238 samples for each worker.
-Worker KZL1qeRzHNYSfDAuOctL1iyVV8WC5N
-Worker ZzGCcAhvqF0HnKxNsUjtJFadcZdyZj
-Worker ZzGCcAhvqF0HnKxNsUjtJFadcZdyZj
-Worker p4Oh7rUGyLe1EpilJFWr9sPDpkO016
-Worker qo6WIyEh27cwAjWpA3Q60J7NaDxzQJ
-Worker p4Oh7rUGyLe1EpilJFWr9sPDpkO016
-Worker zKV8BFGy60O0q7102ALF84S6Jo5i4q
-Worker qo6WIyEh27cwAjWpA3Q60J7NaDxzQJ
-Downsampled training samples: 26865
-Downsampled validation samples: 6190
-Worker zKV8BFGy60O0q7102ALF84S6Jo5i4q
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 12869.52 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 13133.81 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 13211.04 examples/s]Downsampled training samples: 26865
-Downsampled validation samples: 6190
-Filter: 100%|██████████| 6190/6190 [00:00<00:00, 13064.89 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 13024.60 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 13130.46 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 13152.60 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 13072.77 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 13186.07 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 13095.09 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 13170.45 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 13094.82 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 13179.19 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 13143.60 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 13152.64 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 13092.81 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 13127.18 examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 12485.91 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 12734.75 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 12802.70 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 7496.77 examples/s] Filter: 100%|██████████| 6190/6190 [00:00<00:00, 12697.88 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 9295.92 examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 12678.53 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 9232.67 examples/s]
-Map:   0%|          | 0/26865 [00:00<?, ? examples/s]Map:   2%|▏         | 491/26865 [00:00<00:05, 4797.94 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 12753.98 examples/s]Map:   4%|▎         | 982/26865 [00:00<00:05, 4857.17 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 12746.52 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 12682.66 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:   6%|▌         | 1488/26865 [00:00<00:06, 3804.58 examples/s]Map:   7%|▋         | 1988/26865 [00:00<00:05, 4199.52 examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 12818.17 examples/s]Map:   9%|▉         | 2494/26865 [00:00<00:06, 3842.62 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 12753.47 examples/s]Map:  11%|█         | 2985/26865 [00:00<00:05, 4141.62 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 12820.35 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 12751.27 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:  13%|█▎        | 3494/26865 [00:00<00:06, 3850.62 examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 12892.60 examples/s]Map:  15%|█▍        | 3987/26865 [00:00<00:05, 4132.98 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 12875.80 examples/s]Map:  17%|█▋        | 4495/26865 [00:01<00:06, 3635.42 examples/s]Map:  19%|█▊        | 4993/26865 [00:01<00:05, 3962.82 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 12822.78 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 12774.79 examples/s]
-Filter:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:  20%|██        | 5485/26865 [00:01<00:05, 3717.95 examples/s]Filter:  32%|███▏      | 2000/6190 [00:00<00:00, 12776.00 examples/s]Map:  22%|██▏       | 5979/26865 [00:01<00:05, 4016.55 examples/s]Map:  24%|██▍       | 6492/26865 [00:01<00:05, 3784.92 examples/s]Map:  26%|██▌       | 6991/26865 [00:01<00:04, 4078.63 examples/s]Filter:  65%|██████▍   | 4000/6190 [00:00<00:00, 7458.49 examples/s] Map:  28%|██▊       | 7499/26865 [00:01<00:05, 3833.18 examples/s]Filter:  97%|█████████▋| 6000/6190 [00:00<00:00, 9192.15 examples/s]Filter: 100%|██████████| 6190/6190 [00:00<00:00, 9127.69 examples/s]
-Map:  30%|██▉       | 7990/26865 [00:02<00:04, 4098.92 examples/s]Map:  32%|███▏      | 8475/26865 [00:02<00:04, 3732.65 examples/s]Map:  33%|███▎      | 8971/26865 [00:02<00:04, 4030.62 examples/s]Map:  35%|███▌      | 9489/26865 [00:02<00:04, 3783.71 examples/s]Map:  37%|███▋      | 9984/26865 [00:02<00:04, 4067.65 examples/s]Map:  39%|███▉      | 10485/26865 [00:02<00:04, 3812.52 examples/s]Map:  41%|████      | 10979/26865 [00:02<00:03, 4087.66 examples/s]Map:  43%|████▎     | 11494/26865 [00:02<00:04, 3839.14 examples/s]Map:  45%|████▍     | 11993/26865 [00:03<00:03, 4122.11 examples/s]Map:  47%|████▋     | 12495/26865 [00:03<00:03, 3841.14 examples/s]Map:  48%|████▊     | 12994/26865 [00:03<00:03, 4124.83 examples/s]Map:  50%|█████     | 13506/26865 [00:03<00:03, 3873.47 examples/s]Map:  52%|█████▏    | 14000/26865 [00:03<00:04, 3070.38 examples/s]Map:  54%|█████▍    | 14492/26865 [00:03<00:03, 3453.41 examples/s]Map:  56%|█████▌    | 14987/26865 [00:03<00:03, 3795.51 examples/s]Map:  58%|█████▊    | 15504/26865 [00:04<00:03, 3676.29 examples/s]Map:  60%|█████▉    | 16000/26865 [00:04<00:03, 3584.63 examples/s]Map:  61%|██████▏   | 16484/26865 [00:04<00:02, 3876.85 examples/s]Map:  63%|██████▎   | 16974/26865 [00:04<00:02, 4132.53 examples/s]Map:  65%|██████▌   | 17485/26865 [00:04<00:02, 3844.57 examples/s]Map:  67%|██████▋   | 17980/26865 [00:04<00:02, 4117.25 examples/s]Map:  69%|██████▉   | 18486/26865 [00:04<00:02, 3846.13 examples/s]Map:  71%|███████   | 18983/26865 [00:04<00:01, 4123.35 examples/s]Map:  73%|███████▎  | 19487/26865 [00:05<00:01, 3773.74 examples/s]Map:  74%|███████▍  | 19987/26865 [00:05<00:01, 4071.23 examples/s]Map:  76%|███████▋  | 20486/26865 [00:05<00:01, 3801.46 examples/s]Map:  78%|███████▊  | 20979/26865 [00:05<00:01, 4076.11 examples/s]Map:  80%|███████▉  | 21490/26865 [00:05<00:01, 3840.19 examples/s]Map:  82%|████████▏ | 21983/26865 [00:05<00:01, 4108.67 examples/s]Map:  84%|████████▍ | 22500/26865 [00:05<00:01, 3858.09 examples/s]Map:  86%|████████▌ | 22970/26865 [00:05<00:00, 4062.90 examples/s]Map:  87%|████████▋ | 23488/26865 [00:06<00:00, 3792.08 examples/s]Map:  89%|████████▉ | 23988/26865 [00:06<00:00, 4087.05 examples/s]Map:  91%|█████████ | 24487/26865 [00:06<00:00, 3805.88 examples/s]Map:  93%|█████████▎| 24986/26865 [00:06<00:00, 4093.46 examples/s]Map:  95%|█████████▍| 25494/26865 [00:06<00:00, 3810.39 examples/s]Map:  97%|█████████▋| 25991/26865 [00:06<00:00, 4092.20 examples/s]Map:  99%|█████████▊| 26491/26865 [00:06<00:00, 2642.34 examples/s]Map: 100%|██████████| 26865/26865 [00:07<00:00, 2755.97 examples/s]Map: 100%|██████████| 26865/26865 [00:07<00:00, 3775.82 examples/s]
-Map:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:   8%|▊         | 491/6190 [00:00<00:01, 4798.89 examples/s]Map:  16%|█▌        | 986/6190 [00:00<00:01, 4884.44 examples/s]Map:  24%|██▍       | 1493/6190 [00:00<00:01, 3959.73 examples/s]Map:  32%|███▏      | 1964/6190 [00:00<00:01, 4212.82 examples/s]Map:  40%|████      | 2483/6190 [00:00<00:00, 3816.47 examples/s]Map:  48%|████▊     | 2966/6190 [00:00<00:00, 4100.94 examples/s]Map:  56%|█████▌    | 3478/6190 [00:00<00:00, 3794.13 examples/s]Map:  64%|██████▍   | 3962/6190 [00:00<00:00, 4067.25 examples/s]Map:  72%|███████▏  | 4477/6190 [00:01<00:00, 3532.59 examples/s]Map:  80%|████████  | 4963/6190 [00:01<00:00, 3847.91 examples/s]Map:  89%|████████▊ | 5483/6190 [00:01<00:00, 3599.83 examples/s]Map:  96%|█████████▋| 5970/6190 [00:01<00:00, 3900.52 examples/s]Map: 100%|██████████| 6190/6190 [00:01<00:00, 3774.00 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███▏      | 388/1238 [00:00<00:00, 3797.37 examples/s]Map:  62%|██████▏   | 771/1238 [00:00<00:00, 3808.39 examples/s]Map:  96%|█████████▌| 1187/1238 [00:00<00:00, 3104.45 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3136.67 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███       | 381/1238 [00:00<00:00, 3735.50 examples/s]Map:  62%|██████▏   | 765/1238 [00:00<00:00, 3786.60 examples/s]Map:  96%|█████████▌| 1190/1238 [00:00<00:00, 3012.10 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3060.64 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███       | 384/1238 [00:00<00:00, 3761.66 examples/s]Map:  62%|██████▏   | 769/1238 [00:00<00:00, 3808.07 examples/s]Map:  96%|█████████▌| 1191/1238 [00:00<00:00, 3032.36 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3076.55 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███       | 384/1238 [00:00<00:00, 3751.48 examples/s]Map:  62%|██████▏   | 765/1238 [00:00<00:00, 3780.75 examples/s]Map:  96%|█████████▌| 1184/1238 [00:00<00:00, 3015.00 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3060.74 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  30%|███       | 376/1238 [00:00<00:00, 3671.79 examples/s]Map:  62%|██████▏   | 766/1238 [00:00<00:00, 3796.38 examples/s]Map:  96%|█████████▌| 1191/1238 [00:00<00:00, 3067.20 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3094.88 examples/s]
-Map:   0%|          | 0/26865 [00:00<?, ? examples/s]Map:   4%|▎         | 1000/26865 [00:04<02:00, 214.07 examples/s]Map:   7%|▋         | 2000/26865 [00:09<01:57, 211.10 examples/s]Map:  11%|█         | 3000/26865 [00:14<01:53, 210.31 examples/s]Map:  15%|█▍        | 4000/26865 [00:19<01:48, 209.91 examples/s]Map:  19%|█▊        | 5000/26865 [00:23<01:45, 208.22 examples/s]Map:  22%|██▏       | 6000/26865 [00:28<01:40, 207.66 examples/s]Map:  26%|██▌       | 7000/26865 [00:33<01:35, 208.63 examples/s]Map:  30%|██▉       | 8000/26865 [00:38<01:30, 207.95 examples/s]Map:  34%|███▎      | 9000/26865 [00:43<01:26, 205.35 examples/s]Map:  37%|███▋      | 10000/26865 [00:48<01:21, 206.15 examples/s]Map:  41%|████      | 11000/26865 [00:52<01:16, 206.60 examples/s]Map:  45%|████▍     | 12000/26865 [00:57<01:11, 207.84 examples/s]Map:  48%|████▊     | 13000/26865 [01:02<01:06, 208.35 examples/s]Map:  52%|█████▏    | 14000/26865 [01:07<01:01, 208.54 examples/s]Map:  56%|█████▌    | 15000/26865 [01:11<00:56, 209.59 examples/s]Map:  60%|█████▉    | 16000/26865 [01:16<00:51, 209.67 examples/s]Map:  63%|██████▎   | 17000/26865 [01:21<00:47, 208.23 examples/s]Map:  67%|██████▋   | 18000/26865 [01:26<00:43, 203.83 examples/s]Map:  71%|███████   | 19000/26865 [01:31<00:38, 204.13 examples/s]Map:  74%|███████▍  | 20000/26865 [01:36<00:33, 205.02 examples/s]Map:  78%|███████▊  | 21000/26865 [01:41<00:28, 205.33 examples/s]Map:  82%|████████▏ | 22000/26865 [01:46<00:23, 206.70 examples/s]Map:  86%|████████▌ | 23000/26865 [01:50<00:18, 205.94 examples/s]Map:  89%|████████▉ | 24000/26865 [01:55<00:13, 205.82 examples/s]Map:  93%|█████████▎| 25000/26865 [02:00<00:08, 207.28 examples/s]Map:  97%|█████████▋| 26000/26865 [02:05<00:04, 207.07 examples/s]Map: 100%|██████████| 26865/26865 [02:09<00:00, 206.08 examples/s]Map: 100%|██████████| 26865/26865 [02:09<00:00, 207.13 examples/s]
-Map:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:  16%|█▌        | 1000/6190 [00:04<00:25, 203.64 examples/s]Map:  32%|███▏      | 2000/6190 [00:10<00:21, 193.98 examples/s]Map:  48%|████▊     | 3000/6190 [00:14<00:15, 201.77 examples/s]Map:  65%|██████▍   | 4000/6190 [00:19<00:10, 206.15 examples/s]Map:  81%|████████  | 5000/6190 [00:24<00:05, 204.89 examples/s]Map:  97%|█████████▋| 6000/6190 [00:29<00:00, 207.43 examples/s]Map: 100%|██████████| 6190/6190 [00:30<00:00, 207.49 examples/s]Map: 100%|██████████| 6190/6190 [00:30<00:00, 204.93 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 203.43 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 201.70 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 201.80 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 212.14 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 209.89 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 210.08 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 216.81 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 213.59 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 214.01 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 207.00 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 204.91 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 205.08 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 214.03 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 211.33 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 211.64 examples/s]
-Train Dataset:  Dataset({
-    features: ['choice', 'worker', 'chosen', 'rejected', 'input_ids_chosen', 'attention_mask_chosen', 'input_ids_rejected', 'attention_mask_rejected', 'labeler_index'],
-    num_rows: 26865
-})
-Eval Dataset:  Dataset({
-    features: ['choice', 'worker', 'chosen', 'rejected', 'input_ids_chosen', 'attention_mask_chosen', 'input_ids_rejected', 'attention_mask_rejected', 'labeler_index'],
-    num_rows: 6190
-})
-LoRA Target Modules:  ['q_proj', 'v_proj']
-LoRA Type:  svd
-Map:   0%|          | 0/26865 [00:00<?, ? examples/s]Map:   1%|▏         | 390/26865 [00:00<00:06, 3784.40 examples/s]Map:   3%|▎         | 864/26865 [00:00<00:05, 4334.91 examples/s]LoRA model
-GPTJForSequenceClassification(
-  (transformer): GPTJModel(
-    (wte): Embedding(50400, 4096)
-    (drop): Dropout(p=0.0, inplace=False)
-    (h): ModuleList(
-      (0-27): 28 x GPTJBlock(
-        (ln_1): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
-        (attn): GPTJAttention(
-          (attn_dropout): Dropout(p=0.0, inplace=False)
-          (resid_dropout): Dropout(p=0.0, inplace=False)
-          (k_proj): Linear(in_features=4096, out_features=4096, bias=False)
-          (v_proj): LinearLayer_PSLoRA(
-            (lora_B): Linear(in_features=32, out_features=4096, bias=False)
-            (lora_dropout): Dropout(p=0.05, inplace=False)
-          )
-          (q_proj): LinearLayer_PSLoRA(
-            (lora_B): Linear(in_features=32, out_features=4096, bias=False)
-            (lora_dropout): Dropout(p=0.05, inplace=False)
-          )
-          (out_proj): Linear(in_features=4096, out_features=4096, bias=False)
-        )
-        (mlp): GPTJMLP(
-          (fc_in): Linear(in_features=4096, out_features=16384, bias=True)
-          (fc_out): Linear(in_features=16384, out_features=4096, bias=True)
-          (act): NewGELUActivation()
-          (dropout): Dropout(p=0.0, inplace=False)
-        )
-      )
-    )
-    (ln_f): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
-  )
-  (score): Linear(in_features=4096, out_features=1, bias=False)
-)
-Map:   5%|▌         | 1471/26865 [00:00<00:07, 3605.62 examples/s]<frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
-<frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
-Map:   7%|▋         | 1940/26865 [00:00<00:06, 3941.92 examples/s]Map:   9%|▉         | 2468/26865 [00:00<00:06, 3654.18 examples/s]Map:  11%|█         | 2937/26865 [00:00<00:06, 3931.41 examples/s]Map:  13%|█▎        | 3472/26865 [00:00<00:06, 3691.88 examples/s]Map:  15%|█▍        | 3938/26865 [00:01<00:05, 3935.11 examples/s]Activate Layers: transformer.h.0.attn.v_proj.lora_A
-Activate Layers: transformer.h.0.attn.v_proj.lora_singular
-Activate Layers: transformer.h.0.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.0.attn.q_proj.lora_A
-Activate Layers: transformer.h.0.attn.q_proj.lora_singular
-Activate Layers: transformer.h.0.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.1.attn.v_proj.lora_A
-Activate Layers: transformer.h.1.attn.v_proj.lora_singular
-Activate Layers: transformer.h.1.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.1.attn.q_proj.lora_A
-Activate Layers: transformer.h.1.attn.q_proj.lora_singular
-Activate Layers: transformer.h.1.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.2.attn.v_proj.lora_A
-Activate Layers: transformer.h.2.attn.v_proj.lora_singular
-Activate Layers: transformer.h.2.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.2.attn.q_proj.lora_A
-Activate Layers: transformer.h.2.attn.q_proj.lora_singular
-Activate Layers: transformer.h.2.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.3.attn.v_proj.lora_A
-Activate Layers: transformer.h.3.attn.v_proj.lora_singular
-Activate Layers: transformer.h.3.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.3.attn.q_proj.lora_A
-Activate Layers: transformer.h.3.attn.q_proj.lora_singular
-Activate Layers: transformer.h.3.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.4.attn.v_proj.lora_A
-Activate Layers: transformer.h.4.attn.v_proj.lora_singular
-Activate Layers: transformer.h.4.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.4.attn.q_proj.lora_A
-Activate Layers: transformer.h.4.attn.q_proj.lora_singular
-Activate Layers: transformer.h.4.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.5.attn.v_proj.lora_A
-Activate Layers: transformer.h.5.attn.v_proj.lora_singular
-Activate Layers: transformer.h.5.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.5.attn.q_proj.lora_A
-Activate Layers: transformer.h.5.attn.q_proj.lora_singular
-Activate Layers: transformer.h.5.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.6.attn.v_proj.lora_A
-Activate Layers: transformer.h.6.attn.v_proj.lora_singular
-Activate Layers: transformer.h.6.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.6.attn.q_proj.lora_A
-Activate Layers: transformer.h.6.attn.q_proj.lora_singular
-Activate Layers: transformer.h.6.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.7.attn.v_proj.lora_A
-Activate Layers: transformer.h.7.attn.v_proj.lora_singular
-Activate Layers: transformer.h.7.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.7.attn.q_proj.lora_A
-Activate Layers: transformer.h.7.attn.q_proj.lora_singular
-Activate Layers: transformer.h.7.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.8.attn.v_proj.lora_A
-Activate Layers: transformer.h.8.attn.v_proj.lora_singular
-Activate Layers: transformer.h.8.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.8.attn.q_proj.lora_A
-Activate Layers: transformer.h.8.attn.q_proj.lora_singular
-Activate Layers: transformer.h.8.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.9.attn.v_proj.lora_A
-Activate Layers: transformer.h.9.attn.v_proj.lora_singular
-Activate Layers: transformer.h.9.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.9.attn.q_proj.lora_A
-Activate Layers: transformer.h.9.attn.q_proj.lora_singular
-Activate Layers: transformer.h.9.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.10.attn.v_proj.lora_A
-Activate Layers: transformer.h.10.attn.v_proj.lora_singular
-Activate Layers: transformer.h.10.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.10.attn.q_proj.lora_A
-Activate Layers: transformer.h.10.attn.q_proj.lora_singular
-Activate Layers: transformer.h.10.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.11.attn.v_proj.lora_A
-Activate Layers: transformer.h.11.attn.v_proj.lora_singular
-Activate Layers: transformer.h.11.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.11.attn.q_proj.lora_A
-Activate Layers: transformer.h.11.attn.q_proj.lora_singular
-Activate Layers: transformer.h.11.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.12.attn.v_proj.lora_A
-Activate Layers: transformer.h.12.attn.v_proj.lora_singular
-Activate Layers: transformer.h.12.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.12.attn.q_proj.lora_A
-Activate Layers: transformer.h.12.attn.q_proj.lora_singular
-Activate Layers: transformer.h.12.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.13.attn.v_proj.lora_A
-Activate Layers: transformer.h.13.attn.v_proj.lora_singular
-Activate Layers: transformer.h.13.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.13.attn.q_proj.lora_A
-Activate Layers: transformer.h.13.attn.q_proj.lora_singular
-Activate Layers: transformer.h.13.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.14.attn.v_proj.lora_A
-Activate Layers: transformer.h.14.attn.v_proj.lora_singular
-Activate Layers: transformer.h.14.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.14.attn.q_proj.lora_A
-Activate Layers: transformer.h.14.attn.q_proj.lora_singular
-Activate Layers: transformer.h.14.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.15.attn.v_proj.lora_A
-Activate Layers: transformer.h.15.attn.v_proj.lora_singular
-Activate Layers: transformer.h.15.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.15.attn.q_proj.lora_A
-Activate Layers: transformer.h.15.attn.q_proj.lora_singular
-Activate Layers: transformer.h.15.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.16.attn.v_proj.lora_A
-Activate Layers: transformer.h.16.attn.v_proj.lora_singular
-Activate Layers: transformer.h.16.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.16.attn.q_proj.lora_A
-Activate Layers: transformer.h.16.attn.q_proj.lora_singular
-Activate Layers: transformer.h.16.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.17.attn.v_proj.lora_A
-Activate Layers: transformer.h.17.attn.v_proj.lora_singular
-Activate Layers: transformer.h.17.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.17.attn.q_proj.lora_A
-Activate Layers: transformer.h.17.attn.q_proj.lora_singular
-Activate Layers: transformer.h.17.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.18.attn.v_proj.lora_A
-Activate Layers: transformer.h.18.attn.v_proj.lora_singular
-Activate Layers: transformer.h.18.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.18.attn.q_proj.lora_A
-Activate Layers: transformer.h.18.attn.q_proj.lora_singular
-Activate Layers: transformer.h.18.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.19.attn.v_proj.lora_A
-Activate Layers: transformer.h.19.attn.v_proj.lora_singular
-Activate Layers: transformer.h.19.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.19.attn.q_proj.lora_A
-Activate Layers: transformer.h.19.attn.q_proj.lora_singular
-Activate Layers: transformer.h.19.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.20.attn.v_proj.lora_A
-Activate Layers: transformer.h.20.attn.v_proj.lora_singular
-Activate Layers: transformer.h.20.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.20.attn.q_proj.lora_A
-Activate Layers: transformer.h.20.attn.q_proj.lora_singular
-Activate Layers: transformer.h.20.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.21.attn.v_proj.lora_A
-Activate Layers: transformer.h.21.attn.v_proj.lora_singular
-Activate Layers: transformer.h.21.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.21.attn.q_proj.lora_A
-Activate Layers: transformer.h.21.attn.q_proj.lora_singular
-Activate Layers: transformer.h.21.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.22.attn.v_proj.lora_A
-Activate Layers: transformer.h.22.attn.v_proj.lora_singular
-Activate Layers: transformer.h.22.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.22.attn.q_proj.lora_A
-Activate Layers: transformer.h.22.attn.q_proj.lora_singular
-Activate Layers: transformer.h.22.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.23.attn.v_proj.lora_A
-Activate Layers: transformer.h.23.attn.v_proj.lora_singular
-Activate Layers: transformer.h.23.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.23.attn.q_proj.lora_A
-Activate Layers: transformer.h.23.attn.q_proj.lora_singular
-Activate Layers: transformer.h.23.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.24.attn.v_proj.lora_A
-Activate Layers: transformer.h.24.attn.v_proj.lora_singular
-Activate Layers: transformer.h.24.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.24.attn.q_proj.lora_A
-Activate Layers: transformer.h.24.attn.q_proj.lora_singular
-Activate Layers: transformer.h.24.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.25.attn.v_proj.lora_A
-Activate Layers: transformer.h.25.attn.v_proj.lora_singular
-Activate Layers: transformer.h.25.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.25.attn.q_proj.lora_A
-Activate Layers: transformer.h.25.attn.q_proj.lora_singular
-Activate Layers: transformer.h.25.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.26.attn.v_proj.lora_A
-Activate Layers: transformer.h.26.attn.v_proj.lora_singular
-Activate Layers: transformer.h.26.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.26.attn.q_proj.lora_A
-Activate Layers: transformer.h.26.attn.q_proj.lora_singular
-Activate Layers: transformer.h.26.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.27.attn.v_proj.lora_A
-Activate Layers: transformer.h.27.attn.v_proj.lora_singular
-Activate Layers: transformer.h.27.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.27.attn.q_proj.lora_A
-Activate Layers: transformer.h.27.attn.q_proj.lora_singular
-Activate Layers: transformer.h.27.attn.q_proj.lora_B.weight
-Activate Layers: score.weight
-Map:  17%|█▋        | 4473/26865 [00:01<00:06, 3488.50 examples/s]Map:  18%|█▊        | 4944/26865 [00:01<00:05, 3774.61 examples/s]Map:  20%|██        | 5458/26865 [00:01<00:05, 3577.83 examples/s]Map:  22%|██▏       | 5930/26865 [00:01<00:05, 3848.69 examples/s]Map:  24%|██▍       | 6467/26865 [00:01<00:05, 3653.39 examples/s]Map:  26%|██▌       | 6943/26865 [00:01<00:05, 3914.01 examples/s]Map:  28%|██▊       | 7460/26865 [00:01<00:05, 3661.96 examples/s]Map:  30%|██▉       | 7931/26865 [00:02<00:04, 3910.67 examples/s]Map:  31%|███▏      | 8461/26865 [00:02<00:05, 3676.48 examples/s]Map:  33%|███▎      | 8926/26865 [00:02<00:04, 3906.98 examples/s]Map:  35%|███▌      | 9461/26865 [00:02<00:04, 3649.82 examples/s]Map:  37%|███▋      | 9928/26865 [00:02<00:04, 3890.56 examples/s]Map:  39%|███▉      | 10463/26865 [00:02<00:04, 3655.75 examples/s]Map:  41%|████      | 10934/26865 [00:02<00:04, 3902.88 examples/s]Map:  43%|████▎     | 11461/26865 [00:03<00:04, 3671.48 examples/s]Map:  44%|████▍     | 11934/26865 [00:03<00:03, 3921.40 examples/s]Map:  46%|████▋     | 12467/26865 [00:03<00:03, 3695.11 examples/s]Map:  48%|████▊     | 12941/26865 [00:03<00:03, 3943.27 examples/s]Map:  50%|█████     | 13466/26865 [00:03<00:03, 3633.68 examples/s]Map:  52%|█████▏    | 13940/26865 [00:03<00:03, 3892.64 examples/s]Map:  54%|█████▍    | 14467/26865 [00:03<00:04, 3021.03 examples/s]Map:  56%|█████▌    | 14941/26865 [00:04<00:03, 3369.25 examples/s]Map:  58%|█████▊    | 15469/26865 [00:04<00:03, 3325.11 examples/s]Map:  59%|█████▉    | 15937/26865 [00:04<00:03, 3622.36 examples/s]Map:  61%|██████▏   | 16459/26865 [00:04<00:02, 3489.09 examples/s]Map:  63%|██████▎   | 16927/26865 [00:04<00:02, 3759.13 examples/s]Map:  65%|██████▍   | 17458/26865 [00:04<00:02, 3572.44 examples/s]Map:  67%|██████▋   | 17932/26865 [00:04<00:02, 3842.42 examples/s]Map:  69%|██████▊   | 18454/26865 [00:04<00:02, 3612.62 examples/s]Map:  70%|███████   | 18926/26865 [00:05<00:02, 3871.90 examples/s]Map:  72%|███████▏  | 19467/26865 [00:05<00:02, 3648.24 examples/s]Map:  74%|███████▍  | 19937/26865 [00:05<00:01, 3893.11 examples/s]Map:  76%|███████▌  | 20459/26865 [00:05<00:01, 3641.32 examples/s]Map:  78%|███████▊  | 20934/26865 [00:05<00:01, 3900.27 examples/s]Map:  80%|███████▉  | 21469/26865 [00:05<00:01, 3644.50 examples/s]Map:  82%|████████▏ | 21937/26865 [00:05<00:01, 3885.60 examples/s]Map:  84%|████████▎ | 22467/26865 [00:06<00:01, 3570.72 examples/s]Map:  85%|████████▌ | 22937/26865 [00:06<00:01, 3832.78 examples/s]Map:  87%|████████▋ | 23458/26865 [00:06<00:00, 3604.41 examples/s]Map:  89%|████████▉ | 23925/26865 [00:06<00:00, 3853.53 examples/s]Map:  91%|█████████ | 24463/26865 [00:06<00:00, 3597.89 examples/s]Map:  93%|█████████▎| 24938/26865 [00:06<00:00, 3864.95 examples/s]Map:  95%|█████████▍| 25471/26865 [00:06<00:00, 3627.17 examples/s]Map:  97%|█████████▋| 25940/26865 [00:06<00:00, 3873.94 examples/s]Map:  99%|█████████▊| 26463/26865 [00:07<00:00, 2557.17 examples/s]Map: 100%|██████████| 26865/26865 [00:07<00:00, 2682.50 examples/s]Map: 100%|██████████| 26865/26865 [00:07<00:00, 3597.67 examples/s]
-Map:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:   8%|▊         | 467/6190 [00:00<00:01, 4565.45 examples/s]Map:  15%|█▌        | 938/6190 [00:00<00:01, 4640.68 examples/s]Map:  24%|██▎       | 1470/6190 [00:00<00:01, 3789.59 examples/s]Map:  31%|███▏      | 1935/6190 [00:00<00:01, 4070.07 examples/s]Map:  40%|███▉      | 2463/6190 [00:00<00:01, 3581.73 examples/s]Map:  47%|████▋     | 2929/6190 [00:00<00:00, 3869.66 examples/s]Map:  56%|█████▌    | 3461/6190 [00:00<00:00, 3623.67 examples/s]Map:  64%|██████▎   | 3931/6190 [00:01<00:00, 3892.34 examples/s]Map:  72%|███████▏  | 4462/6190 [00:01<00:00, 3625.54 examples/s]Map:  80%|███████▉  | 4930/6190 [00:01<00:00, 3880.23 examples/s]Map:  88%|████████▊ | 5455/6190 [00:01<00:00, 3639.37 examples/s]Map:  96%|█████████▌| 5913/6190 [00:01<00:00, 3863.23 examples/s]Map: 100%|██████████| 6190/6190 [00:01<00:00, 3684.39 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███       | 382/1238 [00:00<00:00, 3731.89 examples/s]Map:  61%|██████    | 757/1238 [00:00<00:00, 3738.41 examples/s]Map:  96%|█████████▌| 1186/1238 [00:00<00:00, 3019.69 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3053.89 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███       | 378/1238 [00:00<00:00, 3694.43 examples/s]Map:  61%|██████    | 753/1238 [00:00<00:00, 3720.45 examples/s]Map:  96%|█████████▌| 1186/1238 [00:00<00:00, 3051.30 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3062.57 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  31%|███       | 378/1238 [00:00<00:00, 3694.35 examples/s]Map:  61%|██████    | 756/1238 [00:00<00:00, 3736.84 examples/s]Map:  95%|█████████▍| 1173/1238 [00:00<00:00, 2929.20 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 2993.90 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  30%|███       | 375/1238 [00:00<00:00, 3678.85 examples/s]Map:  60%|██████    | 744/1238 [00:00<00:00, 3679.55 examples/s]Map:  95%|█████████▌| 1179/1238 [00:00<00:00, 3026.38 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 3053.18 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  30%|██▉       | 368/1238 [00:00<00:00, 3600.19 examples/s]Map:  60%|██████    | 748/1238 [00:00<00:00, 3712.57 examples/s]Map:  96%|█████████▌| 1184/1238 [00:00<00:00, 2856.84 examples/s]Map: 100%|██████████| 1238/1238 [00:00<00:00, 2923.82 examples/s]
-Map:   0%|          | 0/26865 [00:00<?, ? examples/s]Map:   4%|▎         | 1000/26865 [00:04<02:01, 212.43 examples/s]Map:   7%|▋         | 2000/26865 [00:09<01:58, 209.51 examples/s]Map:  11%|█         | 3000/26865 [00:14<01:54, 208.80 examples/s]Map:  15%|█▍        | 4000/26865 [00:19<01:49, 208.37 examples/s]Map:  19%|█▊        | 5000/26865 [00:24<01:45, 206.54 examples/s]Map:  22%|██▏       | 6000/26865 [00:28<01:41, 206.23 examples/s]Map:  26%|██▌       | 7000/26865 [00:33<01:35, 207.41 examples/s]Map:  30%|██▉       | 8000/26865 [00:38<01:31, 206.92 examples/s]Map:  34%|███▎      | 9000/26865 [00:43<01:27, 204.42 examples/s]Map:  37%|███▋      | 10000/26865 [00:48<01:22, 205.23 examples/s]Map:  41%|████      | 11000/26865 [00:53<01:17, 205.80 examples/s]Map:  45%|████▍     | 12000/26865 [00:58<01:11, 206.93 examples/s]Map:  48%|████▊     | 13000/26865 [01:02<01:06, 207.83 examples/s]Map:  52%|█████▏    | 14000/26865 [01:07<01:01, 207.74 examples/s]Map:  56%|█████▌    | 15000/26865 [01:12<00:56, 209.07 examples/s]Map:  60%|█████▉    | 16000/26865 [01:17<00:52, 208.83 examples/s]Map:  63%|██████▎   | 17000/26865 [01:21<00:47, 207.64 examples/s]Map:  67%|██████▋   | 18000/26865 [01:27<00:43, 202.80 examples/s]Map:  71%|███████   | 19000/26865 [01:32<00:38, 203.41 examples/s]Map:  74%|███████▍  | 20000/26865 [01:36<00:33, 204.22 examples/s]Map:  78%|███████▊  | 21000/26865 [01:41<00:28, 204.81 examples/s]Map:  82%|████████▏ | 22000/26865 [01:46<00:23, 206.10 examples/s]Map:  86%|████████▌ | 23000/26865 [01:51<00:18, 205.55 examples/s]Map:  89%|████████▉ | 24000/26865 [01:56<00:13, 205.34 examples/s]Map:  93%|█████████▎| 25000/26865 [02:01<00:09, 206.90 examples/s]Map:  97%|█████████▋| 26000/26865 [02:05<00:04, 206.53 examples/s]Map: 100%|██████████| 26865/26865 [02:10<00:00, 205.92 examples/s]Map: 100%|██████████| 26865/26865 [02:10<00:00, 206.35 examples/s]
-Map:   0%|          | 0/6190 [00:00<?, ? examples/s]Map:  16%|█▌        | 1000/6190 [00:04<00:25, 204.60 examples/s]Map:  32%|███▏      | 2000/6190 [00:09<00:20, 206.03 examples/s]Map:  48%|████▊     | 3000/6190 [00:14<00:15, 209.02 examples/s]Map:  65%|██████▍   | 4000/6190 [00:19<00:10, 210.04 examples/s]Map:  81%|████████  | 5000/6190 [00:24<00:05, 207.10 examples/s]Map:  97%|█████████▋| 6000/6190 [00:28<00:00, 208.55 examples/s]Map: 100%|██████████| 6190/6190 [00:29<00:00, 208.47 examples/s]Map: 100%|██████████| 6190/6190 [00:29<00:00, 208.10 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 204.38 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 201.19 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 201.63 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 211.24 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 208.23 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 208.61 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 214.56 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 211.68 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 212.02 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 205.88 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 203.87 examples/s]Map: 100%|██████████| 1238/1238 [00:06<00:00, 204.02 examples/s]
-Map:   0%|          | 0/1238 [00:00<?, ? examples/s]Map:  81%|████████  | 1000/1238 [00:04<00:01, 211.88 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 209.65 examples/s]Map: 100%|██████████| 1238/1238 [00:05<00:00, 209.84 examples/s]
-Train Dataset:  Dataset({
-    features: ['choice', 'worker', 'chosen', 'rejected', 'input_ids_chosen', 'attention_mask_chosen', 'input_ids_rejected', 'attention_mask_rejected', 'labeler_index'],
-    num_rows: 26865
-})
-Eval Dataset:  Dataset({
-    features: ['choice', 'worker', 'chosen', 'rejected', 'input_ids_chosen', 'attention_mask_chosen', 'input_ids_rejected', 'attention_mask_rejected', 'labeler_index'],
-    num_rows: 6190
-})
-LoRA Target Modules:  ['q_proj', 'v_proj']
-LoRA Type:  svd
-LoRA model
-GPTJForSequenceClassification(
-  (transformer): GPTJModel(
-    (wte): Embedding(50400, 4096)
-    (drop): Dropout(p=0.0, inplace=False)
-    (h): ModuleList(
-      (0-27): 28 x GPTJBlock(
-        (ln_1): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
-        (attn): GPTJAttention(
-          (attn_dropout): Dropout(p=0.0, inplace=False)
-          (resid_dropout): Dropout(p=0.0, inplace=False)
-          (k_proj): Linear(in_features=4096, out_features=4096, bias=False)
-          (v_proj): LinearLayer_PSLoRA(
-            (lora_B): Linear(in_features=32, out_features=4096, bias=False)
-            (lora_dropout): Dropout(p=0.05, inplace=False)
-          )
-          (q_proj): LinearLayer_PSLoRA(
-            (lora_B): Linear(in_features=32, out_features=4096, bias=False)
-            (lora_dropout): Dropout(p=0.05, inplace=False)
-          )
-          (out_proj): Linear(in_features=4096, out_features=4096, bias=False)
-        )
-        (mlp): GPTJMLP(
-          (fc_in): Linear(in_features=4096, out_features=16384, bias=True)
-          (fc_out): Linear(in_features=16384, out_features=4096, bias=True)
-          (act): NewGELUActivation()
-          (dropout): Dropout(p=0.0, inplace=False)
-        )
-      )
-    )
-    (ln_f): LayerNorm((4096,), eps=1e-05, elementwise_affine=True)
-  )
-  (score): Linear(in_features=4096, out_features=1, bias=False)
-)
-<frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.ScalarMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
-<frozen importlib._bootstrap>:488: DeprecationWarning: Type google.protobuf.pyext._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
-Activate Layers: transformer.h.0.attn.v_proj.lora_A
-Activate Layers: transformer.h.0.attn.v_proj.lora_singular
-Activate Layers: transformer.h.0.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.0.attn.q_proj.lora_A
-Activate Layers: transformer.h.0.attn.q_proj.lora_singular
-Activate Layers: transformer.h.0.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.1.attn.v_proj.lora_A
-Activate Layers: transformer.h.1.attn.v_proj.lora_singular
-Activate Layers: transformer.h.1.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.1.attn.q_proj.lora_A
-Activate Layers: transformer.h.1.attn.q_proj.lora_singular
-Activate Layers: transformer.h.1.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.2.attn.v_proj.lora_A
-Activate Layers: transformer.h.2.attn.v_proj.lora_singular
-Activate Layers: transformer.h.2.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.2.attn.q_proj.lora_A
-Activate Layers: transformer.h.2.attn.q_proj.lora_singular
-Activate Layers: transformer.h.2.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.3.attn.v_proj.lora_A
-Activate Layers: transformer.h.3.attn.v_proj.lora_singular
-Activate Layers: transformer.h.3.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.3.attn.q_proj.lora_A
-Activate Layers: transformer.h.3.attn.q_proj.lora_singular
-Activate Layers: transformer.h.3.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.4.attn.v_proj.lora_A
-Activate Layers: transformer.h.4.attn.v_proj.lora_singular
-Activate Layers: transformer.h.4.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.4.attn.q_proj.lora_A
-Activate Layers: transformer.h.4.attn.q_proj.lora_singular
-Activate Layers: transformer.h.4.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.5.attn.v_proj.lora_A
-Activate Layers: transformer.h.5.attn.v_proj.lora_singular
-Activate Layers: transformer.h.5.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.5.attn.q_proj.lora_A
-Activate Layers: transformer.h.5.attn.q_proj.lora_singular
-Activate Layers: transformer.h.5.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.6.attn.v_proj.lora_A
-Activate Layers: transformer.h.6.attn.v_proj.lora_singular
-Activate Layers: transformer.h.6.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.6.attn.q_proj.lora_A
-Activate Layers: transformer.h.6.attn.q_proj.lora_singular
-Activate Layers: transformer.h.6.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.7.attn.v_proj.lora_A
-Activate Layers: transformer.h.7.attn.v_proj.lora_singular
-Activate Layers: transformer.h.7.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.7.attn.q_proj.lora_A
-Activate Layers: transformer.h.7.attn.q_proj.lora_singular
-Activate Layers: transformer.h.7.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.8.attn.v_proj.lora_A
-Activate Layers: transformer.h.8.attn.v_proj.lora_singular
-Activate Layers: transformer.h.8.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.8.attn.q_proj.lora_A
-Activate Layers: transformer.h.8.attn.q_proj.lora_singular
-Activate Layers: transformer.h.8.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.9.attn.v_proj.lora_A
-Activate Layers: transformer.h.9.attn.v_proj.lora_singular
-Activate Layers: transformer.h.9.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.9.attn.q_proj.lora_A
-Activate Layers: transformer.h.9.attn.q_proj.lora_singular
-Activate Layers: transformer.h.9.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.10.attn.v_proj.lora_A
-Activate Layers: transformer.h.10.attn.v_proj.lora_singular
-Activate Layers: transformer.h.10.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.10.attn.q_proj.lora_A
-Activate Layers: transformer.h.10.attn.q_proj.lora_singular
-Activate Layers: transformer.h.10.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.11.attn.v_proj.lora_A
-Activate Layers: transformer.h.11.attn.v_proj.lora_singular
-Activate Layers: transformer.h.11.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.11.attn.q_proj.lora_A
-Activate Layers: transformer.h.11.attn.q_proj.lora_singular
-Activate Layers: transformer.h.11.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.12.attn.v_proj.lora_A
-Activate Layers: transformer.h.12.attn.v_proj.lora_singular
-Activate Layers: transformer.h.12.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.12.attn.q_proj.lora_A
-Activate Layers: transformer.h.12.attn.q_proj.lora_singular
-Activate Layers: transformer.h.12.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.13.attn.v_proj.lora_A
-Activate Layers: transformer.h.13.attn.v_proj.lora_singular
-Activate Layers: transformer.h.13.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.13.attn.q_proj.lora_A
-Activate Layers: transformer.h.13.attn.q_proj.lora_singular
-Activate Layers: transformer.h.13.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.14.attn.v_proj.lora_A
-Activate Layers: transformer.h.14.attn.v_proj.lora_singular
-Activate Layers: transformer.h.14.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.14.attn.q_proj.lora_A
-Activate Layers: transformer.h.14.attn.q_proj.lora_singular
-Activate Layers: transformer.h.14.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.15.attn.v_proj.lora_A
-Activate Layers: transformer.h.15.attn.v_proj.lora_singular
-Activate Layers: transformer.h.15.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.15.attn.q_proj.lora_A
-Activate Layers: transformer.h.15.attn.q_proj.lora_singular
-Activate Layers: transformer.h.15.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.16.attn.v_proj.lora_A
-Activate Layers: transformer.h.16.attn.v_proj.lora_singular
-Activate Layers: transformer.h.16.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.16.attn.q_proj.lora_A
-Activate Layers: transformer.h.16.attn.q_proj.lora_singular
-Activate Layers: transformer.h.16.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.17.attn.v_proj.lora_A
-Activate Layers: transformer.h.17.attn.v_proj.lora_singular
-Activate Layers: transformer.h.17.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.17.attn.q_proj.lora_A
-Activate Layers: transformer.h.17.attn.q_proj.lora_singular
-Activate Layers: transformer.h.17.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.18.attn.v_proj.lora_A
-Activate Layers: transformer.h.18.attn.v_proj.lora_singular
-Activate Layers: transformer.h.18.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.18.attn.q_proj.lora_A
-Activate Layers: transformer.h.18.attn.q_proj.lora_singular
-Activate Layers: transformer.h.18.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.19.attn.v_proj.lora_A
-Activate Layers: transformer.h.19.attn.v_proj.lora_singular
-Activate Layers: transformer.h.19.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.19.attn.q_proj.lora_A
-Activate Layers: transformer.h.19.attn.q_proj.lora_singular
-Activate Layers: transformer.h.19.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.20.attn.v_proj.lora_A
-Activate Layers: transformer.h.20.attn.v_proj.lora_singular
-Activate Layers: transformer.h.20.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.20.attn.q_proj.lora_A
-Activate Layers: transformer.h.20.attn.q_proj.lora_singular
-Activate Layers: transformer.h.20.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.21.attn.v_proj.lora_A
-Activate Layers: transformer.h.21.attn.v_proj.lora_singular
-Activate Layers: transformer.h.21.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.21.attn.q_proj.lora_A
-Activate Layers: transformer.h.21.attn.q_proj.lora_singular
-Activate Layers: transformer.h.21.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.22.attn.v_proj.lora_A
-Activate Layers: transformer.h.22.attn.v_proj.lora_singular
-Activate Layers: transformer.h.22.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.22.attn.q_proj.lora_A
-Activate Layers: transformer.h.22.attn.q_proj.lora_singular
-Activate Layers: transformer.h.22.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.23.attn.v_proj.lora_A
-Activate Layers: transformer.h.23.attn.v_proj.lora_singular
-Activate Layers: transformer.h.23.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.23.attn.q_proj.lora_A
-Activate Layers: transformer.h.23.attn.q_proj.lora_singular
-Activate Layers: transformer.h.23.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.24.attn.v_proj.lora_A
-Activate Layers: transformer.h.24.attn.v_proj.lora_singular
-Activate Layers: transformer.h.24.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.24.attn.q_proj.lora_A
-Activate Layers: transformer.h.24.attn.q_proj.lora_singular
-Activate Layers: transformer.h.24.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.25.attn.v_proj.lora_A
-Activate Layers: transformer.h.25.attn.v_proj.lora_singular
-Activate Layers: transformer.h.25.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.25.attn.q_proj.lora_A
-Activate Layers: transformer.h.25.attn.q_proj.lora_singular
-Activate Layers: transformer.h.25.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.26.attn.v_proj.lora_A
-Activate Layers: transformer.h.26.attn.v_proj.lora_singular
-Activate Layers: transformer.h.26.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.26.attn.q_proj.lora_A
-Activate Layers: transformer.h.26.attn.q_proj.lora_singular
-Activate Layers: transformer.h.26.attn.q_proj.lora_B.weight
-Activate Layers: transformer.h.27.attn.v_proj.lora_A
-Activate Layers: transformer.h.27.attn.v_proj.lora_singular
-Activate Layers: transformer.h.27.attn.v_proj.lora_B.weight
-Activate Layers: transformer.h.27.attn.q_proj.lora_A
-Activate Layers: transformer.h.27.attn.q_proj.lora_singular
-Activate Layers: transformer.h.27.attn.q_proj.lora_B.weight
-Activate Layers: score.weight
-You're using a GPT2TokenizerFast tokenizer. Please note that with a fast tokenizer, using the `__call__` method is faster than using a method to encode the text followed by a call to the `pad` method to get a padded encoding.
-`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
-wandb: WARNING The `run_name` is currently set to the same value as `TrainingArguments.output_dir`. If this was not intended, please specify a different run name by setting the `TrainingArguments.run_name` parameter.
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/sentry_sdk/session.py:51: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  started = datetime.utcnow()
-wandb: Currently logged in as: panda12345pa. Use `wandb login --relogin` to force relogin
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/sentry_sdk/session.py:111: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  timestamp = datetime.utcnow()
-wandb: wandb version 0.18.1 is available!  To upgrade, please run:
-wandb:  $ pip install wandb --upgrade
-wandb: Tracking run with wandb version 0.16.6
-wandb: Run data is saved locally in /home/donghao_dev/project/Shared-LoRA-Reward/wandb/run-20240927_054943-iv8njmcu
-wandb: Run `wandb offline` to turn off syncing.
-wandb: Syncing run ./exp/gpt-j-6b-Reward/lr-5e-5-3epochs-lorar32/pslora-diag
-wandb: ⭐️ View project at https://wandb.ai/panda12345pa/ensemble%20reward%20model%20with%20LoRA
-wandb: 🚀 View run at https://wandb.ai/panda12345pa/ensemble%20reward%20model%20with%20LoRA/runs/iv8njmcu
-  0%|          | 0/630 [00:00<?, ?it/s]/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/google/protobuf/internal/well_known_types.py:174: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
-  self.FromDatetime(datetime.datetime.utcnow())
-You're using a GPT2TokenizerFast tokenizer. Please note that with a fast tokenizer, using the `__call__` method is faster than using a method to encode the text followed by a call to the `pad` method to get a padded encoding.
-`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`...
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/torch/utils/checkpoint.py:1399: FutureWarning: `torch.cpu.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cpu', args...)` instead.
-  with device_autocast_ctx, torch.cpu.amp.autocast(**cpu_autocast_kwargs), recompute_context:  # type: ignore[attr-defined]
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/torch/utils/checkpoint.py:1399: FutureWarning: `torch.cpu.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cpu', args...)` instead.
-  with device_autocast_ctx, torch.cpu.amp.autocast(**cpu_autocast_kwargs), recompute_context:  # type: ignore[attr-defined]
-Could not estimate the number of tokens of the input, floating-point operations will not be computed
-Could not estimate the number of tokens of the input, floating-point operations will not be computed
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/torch/optim/lr_scheduler.py:216: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
-  warnings.warn(
-/home/donghao_dev/anaconda3/envs/RLHF/lib/python3.12/site-packages/torch/optim/lr_scheduler.py:216: UserWarning: Detected call of `lr_scheduler.step()` before `optimizer.step()`. In PyTorch 1.1.0 and later, you should call them in the opposite order: `optimizer.step()` before `lr_scheduler.step()`.  Failure to do this will result in PyTorch skipping the first value of the learning rate schedule. See more details at https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
-  warnings.warn(
-  0%|          | 1/630 [00:46<8:09:09, 46.66s/it]                                                 {'loss': 0.8652, 'grad_norm': 3.7234392166137695, 'learning_rate': 4.9920634920634924e-05, 'epoch': 0.0}
-  0%|          | 1/630 [00:46<8:09:09, 46.66s/it]  0%|          | 2/630 [01:28<7:41:43, 44.11s/it]                                                 {'loss': 0.8926, 'grad_norm': 4.133380889892578, 'learning_rate': 4.9841269841269845e-05, 'epoch': 0.01}
-  0%|          | 2/630 [01:28<7:41:43, 44.11s/it]  0%|          | 3/630 [02:12<7:35:52, 43.62s/it]                                                 {'loss': 0.8281, 'grad_norm': 3.7428078651428223, 'learning_rate': 4.976190476190477e-05, 'epoch': 0.01}
-  0%|          | 3/630 [02:12<7:35:52, 43.62s/it]  1%|          | 4/630 [02:55<7:34:12, 43.53s/it]                                                 {'loss': 0.8398, 'grad_norm': 2.9630537033081055, 'learning_rate': 4.968253968253969e-05, 'epoch': 0.02}
-  1%|          | 4/630 [02:55<7:34:12, 43.53s/it]  1%|          | 5/630 [03:38<7:32:58, 43.49s/it]                                                 {'loss': 0.9082, 'grad_norm': 3.1956191062927246, 'learning_rate': 4.960317460317461e-05, 'epoch': 0.02}
-  1%|          | 5/630 [03:38<7:32:58, 43.49s/it]  1%|          | 6/630 [04:23<7:36:01, 43.85s/it]                                                 {'loss': 0.873, 'grad_norm': 3.0873827934265137, 'learning_rate': 4.9523809523809525e-05, 'epoch': 0.03}
-  1%|          | 6/630 [04:23<7:36:01, 43.85s/it]  1%|          | 7/630 [05:08<7:39:37, 44.27s/it]                                                 {'loss': 0.8086, 'grad_norm': 2.957102060317993, 'learning_rate': 4.9444444444444446e-05, 'epoch': 0.03}
-  1%|          | 7/630 [05:08<7:39:37, 44.27s/it]  1%|▏         | 8/630 [05:52<7:38:35, 44.24s/it]                                                 {'loss': 0.8301, 'grad_norm': 2.5151174068450928, 'learning_rate': 4.936507936507937e-05, 'epoch': 0.04}
-  1%|▏         | 8/630 [05:52<7:38:35, 44.24s/it]  1%|▏         | 9/630 [06:37<7:39:52, 44.43s/it]                                                 {'loss': 0.7949, 'grad_norm': 2.822594165802002, 'learning_rate': 4.928571428571429e-05, 'epoch': 0.04}
-  1%|▏         | 9/630 [06:37<7:39:52, 44.43s/it]
