@@ -54,7 +54,7 @@ class LinearLayer_PSLoRA(nn.Module):
                 self.lora_kernel = nn.Linear(lora_r, lora_r, bias=False)
             elif self.lora_type == 'svd':
                 self.lora_A = nn.Linear(in_features, lora_r, bias=False)
-                self.lora_singular = nn.Parameter(torch.zeros(lora_r))
+                self.lora_singular = nn.Parameter(torch.ones(lora_r))
             else:
                 raise ValueError(f"Invalid LoRA type: {self.lora_type}")
 
@@ -66,7 +66,7 @@ class LinearLayer_PSLoRA(nn.Module):
                 self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
                 self.lora_kernel = nn.Parameter(torch.zeros(num_labelers, lora_r, lora_r))
             elif self.lora_type == 'svd':
-                self.lora_A = nn.Parameter(torch.zeros(num_labelers, lora_r))
+                self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
                 self.lora_singular = nn.Parameter(torch.zeros(num_labelers, lora_r))
             else:
                 raise ValueError(f"Invalid LoRA type: {self.lora_type}")
