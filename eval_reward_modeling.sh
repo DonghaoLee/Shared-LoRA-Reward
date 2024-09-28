@@ -1,5 +1,6 @@
 # Set which GPU devices to be visible to the process, --num_processes should be adjusted accordingly
-export CUDA_VISIBLE_DEVICES="3"
+export CUDA_VISIBLE_DEVICES="0"
+export WANDB_PROJECT="PSLoRA_RewardModel_Debugging"
 
 port=$(shuf -i 6000-9000 -n 1)
 echo $port
@@ -8,7 +9,7 @@ echo $port
 ACCELERATE_LOG_LEVEL=info
 
 # Evaluate the model
-torchrun --nproc_per_node=1 --master_port=${port} src/reward_modeling.py \
+python src/reward_modeling.py \
     --model_name_or_path EleutherAI/gpt-j-6b \
     --dataset_name openai/summarize_from_feedback \
     --dataset_subset comparisons \
@@ -34,5 +35,5 @@ torchrun --nproc_per_node=1 --master_port=${port} src/reward_modeling.py \
     --lora_target_modules q_proj v_proj \
     --lora_type lora \
     --save_only_model True \
-    --report_to none \
+    --report_to wandb \
     --eval_mode True \
