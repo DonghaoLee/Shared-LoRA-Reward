@@ -254,6 +254,21 @@ def convert_linear_layer_to_lora(model,
     return model
 
 
+def convert_lora_checkpoint_to_pisa(checkpoint, target_modules, num_labelers=5):
+    replace_name = []
+    # Get all the layer names from the checkpoint
+    names = list(checkpoint.keys())
+    for name in names:
+        # if any([key in name for key in target_modules]):
+        if 'lora_A' in name:
+            replace_name.append(name)
+            pisa_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+            pisa_lora_A_name = name.replace('lora_A.weight', 'lora_A')
+            checkpoint[pisa_lora_A_name] = pisa_lora_A
+            del checkpoint[name]
+    return checkpoint
+
+
 def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
     # turn off the gradient of all the parameters except the LoRA parameters
     for name, param in model.named_parameters():
