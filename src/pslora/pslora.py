@@ -27,14 +27,16 @@ class LinearLayer_PSLoRA(nn.Module):
                  lora_droppout=0,
                  num_labelers=5,
                  lora_type='lora',
+                 personalize_strategy='personalized_A',
                  bias=None):
         super(LinearLayer_PSLoRA, self).__init__()
         self.weight = weight
         self.bias = bias
         self.num_labelers = num_labelers
         self.lora_type = lora_type
-        self.labeler_index = None  # Labelers being activated in the forward pass (per batch)
+        self.labeler_index = None                           # Labelers being activated in the forward pass (per batch)
         self.debug_mode = False
+        self.personalize_strategy = personalize_strategy    # 'personalized_A' or 'personalized_B'
 
         if lora_r <= 0:
             raise ValueError("You are training to use LoRA, whose reduced dim should be larger than 1")
@@ -45,34 +47,65 @@ class LinearLayer_PSLoRA(nn.Module):
         except:
             out_features, in_features = weight.shape
         
-        if num_labelers <= 0:
-            # Train all the labelers together
-            if self.lora_type == 'lora':
-                self.lora_A = nn.Linear(in_features, lora_r, bias=False)
-            elif self.lora_type == 'kernel':
-                self.lora_A = nn.Linear(in_features, lora_r, bias=False)
-                self.lora_kernel = nn.Linear(lora_r, lora_r, bias=False)
-            elif self.lora_type == 'svd':
-                self.lora_A = nn.Linear(in_features, lora_r, bias=False)
-                self.lora_singular = nn.Parameter(torch.ones(lora_r))
-            else:
-                raise ValueError(f"Invalid LoRA type: {self.lora_type}")
+        if self.personalize_strategy == 'personalized_A':
+            if num_labelers <= 0:
+                # Train all the labelers together
+                if self.lora_type == 'lora':
+                    self.lora_A = nn.Linear(in_features, lora_r, bias=False)
+                elif self.lora_type == 'kernel':
+                    self.lora_A = nn.Linear(in_features, lora_r, bias=False)
+                    self.lora_kernel = nn.Linear(lora_r, lora_r, bias=False)
+                elif self.lora_type == 'svd':
+                    self.lora_A = nn.Linear(in_features, lora_r, bias=False)
+                    self.lora_singular = nn.Parameter(torch.ones(lora_r))
+                else:
+                    raise ValueError(f"Invalid LoRA type: {self.lora_type}")
 
-        else:
-            # Train each labeler separately with a different A matrix but a shared B matrix
-            if self.lora_type == 'lora':
-                self.lora_A = nn.Parameter(torch.zeros(num_labelers, in_features, lora_r))
-            elif self.lora_type == 'kernel':
-                self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
-                self.lora_kernel = nn.Parameter(torch.zeros(num_labelers, lora_r, lora_r))
-            elif self.lora_type == 'svd':
-                self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
-                self.lora_singular = nn.Parameter(torch.zeros(num_labelers, lora_r))
             else:
-                raise ValueError(f"Invalid LoRA type: {self.lora_type}")
-        
-        # self.lora_B = nn.Parameter(torch.zeros(lora_r, out_features))
-        self.lora_B = nn.Linear(lora_r, out_features, bias=False)
+                # Train each labeler separately with a different A matrix but a shared B matrix
+                if self.lora_type == 'lora':
+                    self.lora_A = nn.Parameter(torch.zeros(num_labelers, in_features, lora_r))
+                elif self.lora_type == 'kernel':
+                    self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
+                    self.lora_kernel = nn.Parameter(torch.zeros(num_labelers, lora_r, lora_r))
+                elif self.lora_type == 'svd':
+                    self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
+                    self.lora_singular = nn.Parameter(torch.ones(num_labelers, lora_r))
+                else:
+                    raise ValueError(f"Invalid LoRA type: {self.lora_type}")
+            
+            # self.lora_B = nn.Parameter(torch.zeros(lora_r, out_features))
+            self.lora_B = nn.Linear(lora_r, out_features, bias=False)
+        else:
+            # self.lora_A = nn.Parameter(torch.zeros(in_features, lora_r))
+            self.lora_A = nn.Linear(in_features, lora_r, bias=False)
+
+            if num_labelers <= 0:
+                # Train all the labelers together
+                if self.lora_type == 'lora':
+                    self.lora_B = nn.Linear(lora_r, out_features, bias=False)
+                elif self.lora_type == 'kernel':
+                    self.lora_B = nn.Linear(lora_r, out_features, bias=False)
+                    self.lora_kernel = nn.Linear(lora_r, lora_r, bias=False)
+                elif self.lora_type == 'svd':
+                    self.lora_B = nn.Linear(lora_r, out_features, bias=False)
+                    self.lora_singular = nn.Parameter(torch.ones(lora_r))
+                else:
+                    raise ValueError(f"Invalid LoRA type: {self.lora_type}")
+
+            else:
+                # Train each labeler separately with a different B matrix but a shared A matrix
+                if self.lora_type == 'lora':
+                    self.lora_B = nn.Parameter(torch.zeros(num_labelers, lora_r, out_features))
+                elif self.lora_type == 'kernel':
+                    self.lora_B = nn.Parameter(torch.zeros(lora_r, out_features))
+                    self.lora_kernel = nn.Parameter(torch.zeros(num_labelers, lora_r, lora_r))
+                elif self.lora_type == 'svd':
+                    self.lora_B = nn.Parameter(torch.zeros(lora_r, out_features))
+                    self.lora_singular = nn.Parameter(torch.ones(num_labelers, lora_r))
+                else:
+                    raise ValueError(f"Invalid LoRA type: {self.lora_type}")
+
         self.lora_scaling = lora_alpha / lora_r
 
         if lora_droppout > 0.0:
@@ -95,19 +128,35 @@ class LinearLayer_PSLoRA(nn.Module):
     def reset_parameters(self):
         # initialize A the same way as the default for nn.Linear and B to zero
         # https://github.com/microsoft/LoRA/blob/a0a92e0f26c067cf94747bdbf1ce73793fa44d19/loralib/layers.py#L124
-        if self.num_labelers <= 0:
-            nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
-            if self.lora_type == 'kernel':
-                nn.init.kaiming_uniform_(self.lora_kernel.weight, a=math.sqrt(5))
-            elif self.lora_type == 'svd':
-                nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+        if self.personalize_strategy == 'personalized_A':
+            if self.num_labelers <= 0:
+                nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+                if self.lora_type == 'kernel':
+                    nn.init.kaiming_uniform_(self.lora_kernel.weight, a=math.sqrt(5))
+                elif self.lora_type == 'svd':
+                    nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+            else:
+                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                if self.lora_type == 'kernel':
+                    nn.init.kaiming_uniform_(self.lora_kernel, a=math.sqrt(5))
+                elif self.lora_type == 'svd':
+                    nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+            nn.init.zeros_(self.lora_B.weight)
         else:
-            nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-            if self.lora_type == 'kernel':
-                nn.init.kaiming_uniform_(self.lora_kernel, a=math.sqrt(5))
-            elif self.lora_type == 'svd':
-                nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
-        nn.init.zeros_(self.lora_B.weight)
+            nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
+            if self.num_labelers <= 0:
+                nn.init.zeros_(self.lora_B.weight)
+                if self.lora_type == 'kernel':
+                    nn.init.zeros_(self.lora_kernel.weight)
+                elif self.lora_type == 'svd':
+                    nn.init.zeros_(self.lora_singular)
+            else:
+                nn.init.zeros_(self.lora_B)
+                if self.lora_type == 'kernel':
+                    nn.init.zeros_(self.lora_kernel)
+                elif self.lora_type == 'svd':
+                    nn.init.zeros_(self.lora_singular)
+
 
     def fuse_lora_weight(self):
         # FIXME: Add support for PSLoRa when using additional dimension of labelers
@@ -135,7 +184,10 @@ class LinearLayer_PSLoRA(nn.Module):
         else:
             result = F.linear(input, self.weight, self.bias)
             torch_result_dtype = result.dtype
-            input = input.to(self.lora_B.weight.dtype)
+            if self.personalize_strategy == 'personalized_A':
+                input = input.to(self.lora_B.weight.dtype)
+            else:
+                input = input.to(self.lora_A.weight.dtype)
             
             if self.num_labelers <= 0:
                 if self.lora_type == 'lora':
@@ -164,33 +216,48 @@ class LinearLayer_PSLoRA(nn.Module):
                     print(f"[Device{input.device}] After broadcasting, labeler_index: {self.labeler_index}")
                 
                 if self.lora_type == 'lora':
-                    # Select the appropriate A matrices for each sample in the batch
-                    labelers_A = self.lora_A[self.labeler_index]
+                    if self.personalize_strategy == 'personalized_A':
+                        # Select the appropriate A matrices for each sample in the batch
+                        labelers_A = self.lora_A[self.labeler_index]
 
-                    # input: (batch_size, seq_length, in_features)
-                    # labelers_A: (batch_size, in_features, r)
-                    # lora_A: (batch_size, seq_length, r) (after torch.bmm)
-                    # lora_B: nn.Linear(r, out_features)
-                    # result: (batch_size, seq_length, out_features)
-                    result = result + self.lora_B(torch.bmm(self.lora_dropout(input), labelers_A)) * self.lora_scaling
+                        # input: (batch_size, seq_length, in_features)
+                        # labelers_A: (batch_size, in_features, r)
+                        # lora_A: (batch_size, seq_length, r) (after torch.bmm)
+                        # lora_B: nn.Linear(r, out_features)
+                        # result: (batch_size, seq_length, out_features)
+                        result = result + self.lora_B(torch.bmm(self.lora_dropout(input), labelers_A)) * self.lora_scaling
+                    else:
+                        # Select the appropriate B matrices for each sample in the batch
+                        labelers_B = self.lora_B[self.labeler_index]
+                        result = result + torch.bmm(self.lora_A(self.lora_dropout(input)), labelers_B) * self.lora_scaling
 
                 elif self.lora_type == 'kernel':
-                    # Select the appropriate kernel matrices for each sample in the batch
-                    labelers_kernel = self.lora_kernel[self.labeler_index]
-                    # input: (batch_size, seq_length, in_features)
-                    # lora_A: nn.Parameter(in_features, r)
-                    # labelers_kernel: (batch_size, r, r)
-                    # lora_B: nn.Linear(r, out_features)
-                    result = result + self.lora_B(torch.bmm(self.lora_dropout(input) @ self.lora_A, labelers_kernel)) * self.lora_scaling
+                    if self.personalize_strategy == 'personalized_A':
+                        # Select the appropriate kernel matrices for each sample in the batch
+                        labelers_kernel = self.lora_kernel[self.labeler_index]
+                        # input: (batch_size, seq_length, in_features)
+                        # lora_A: nn.Parameter(in_features, r)
+                        # labelers_kernel: (batch_size, r, r)
+                        # lora_B: nn.Linear(r, out_features)
+                        result = result + self.lora_B(torch.bmm(self.lora_dropout(input) @ self.lora_A, labelers_kernel)) * self.lora_scaling
+                    else:
+                        # Select the appropriate kernel matrices for each sample in the batch
+                        labelers_kernel = self.lora_kernel[self.labeler_index]
+                        result = result + (torch.bmm(self.lora_A(self.lora_dropout(input)), labelers_kernel) @ self.lora_B) * self.lora_scaling
 
                 elif self.lora_type == 'svd':
-                    # Select the appropriate singular values for each sample in the batch
-                    labelers_singular = torch.diag_embed(self.lora_singular[self.labeler_index])
-                    # input: (batch_size, seq_length, in_features)
-                    # lora_A: nn.Parameter(in_features, r)
-                    # labelers_singular: (batch_size, r, r), torch.diag_embed is used to create a batch of diagonal matrices
-                    # lora_B: nn.Linear(r, out_features)
-                    result = result + self.lora_B(torch.bmm(self.lora_dropout(input) @ self.lora_A, labelers_singular)) * self.lora_scaling
+                    if self.personalize_strategy == 'personalized_A':
+                        # Select the appropriate singular values for each sample in the batch
+                        labelers_singular = torch.diag_embed(self.lora_singular[self.labeler_index])
+                        # input: (batch_size, seq_length, in_features)
+                        # lora_A: nn.Parameter(in_features, r)
+                        # labelers_singular: (batch_size, r, r), torch.diag_embed is used to create a batch of diagonal matrices
+                        # lora_B: nn.Linear(r, out_features)
+                        result = result + self.lora_B(torch.bmm(self.lora_dropout(input) @ self.lora_A, labelers_singular)) * self.lora_scaling
+                    else:
+                        # Select the appropriate singular values for each sample in the batch
+                        labelers_singular = torch.diag_embed(self.lora_singular[self.labeler_index])
+                        result = result + (torch.bmm(self.lora_A(self.lora_dropout(input)), labelers_singular) @ self.lora_B) * self.lora_scaling
 
 
             result = result.to(torch_result_dtype)
@@ -238,7 +305,8 @@ def convert_linear_layer_to_lora(model,
                                  lora_alpha=1,
                                  lora_dropout=0,
                                  num_labelers=5,
-                                 lora_type='lora'):
+                                 lora_type='lora',
+                                 personalize_strategy='personalized_A'):
     replace_name = []
     for name, module in model.named_modules():
         # what is part_module_name is a list of strings?
@@ -248,24 +316,33 @@ def convert_linear_layer_to_lora(model,
     for name in replace_name:
         module = recursive_getattr(model, name)
         tmp = LinearLayer_PSLoRA(
-            module.weight, lora_r, lora_alpha, lora_dropout, num_labelers, lora_type,
+            module.weight, lora_r, lora_alpha, lora_dropout,
+            num_labelers, lora_type, personalize_strategy,
             module.bias).to(module.weight.dtype).to(module.weight.device)
         recursive_setattr(model, name, tmp)
     return model
 
 
-def convert_lora_checkpoint_to_pisa(checkpoint, target_modules, num_labelers=5):
+def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_strategy='personalized_A'):
     replace_name = []
     # Get all the layer names from the checkpoint
     names = list(checkpoint.keys())
     for name in names:
         # if any([key in name for key in target_modules]):
-        if 'lora_A' in name:
-            replace_name.append(name)
-            pisa_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
-            pisa_lora_A_name = name.replace('lora_A.weight', 'lora_A')
-            checkpoint[pisa_lora_A_name] = pisa_lora_A
-            del checkpoint[name]
+        if personalize_strategy == 'personlized_A':
+            if 'lora_A' in name:
+                replace_name.append(name)
+                plas_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+                plas_lora_A_name = name.replace('lora_A.weight', 'lora_A')
+                checkpoint[plas_lora_A_name] = plas_lora_A
+                del checkpoint[name]
+        else:
+            if 'lora_B' in name:
+                replace_name.append(name)
+                plas_lora_B = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+                plas_lora_B_name = name.replace('lora_B.weight', 'lora_B')
+                checkpoint[plas_lora_B_name] = plas_lora_B
+                del checkpoint[name]
     return checkpoint
 
 

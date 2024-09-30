@@ -46,7 +46,7 @@ from pslora import (
     LinearLayer_PSLoRA,
     convert_linear_layer_to_lora,
     only_optimize_lora_parameters,
-    convert_lora_checkpoint_to_pisa
+    convert_lora_checkpoint_to_plas
 )
 
 
@@ -86,6 +86,10 @@ class RewardScriptArguments:
     lora_type: str = field(
         default="lora",
         metadata={"help": "The type of LoRA to use. Options: pslora, kernel, svd"},
+    )
+    lora_personalize_strategy: str = field(
+        default="personalized_A",
+        metadata={"help": "Which layer should be expanded to personalized structure. Options: personalized_A, personalized_B."},
     )
     eval_mode: bool = field(
         default=False,
@@ -436,7 +440,8 @@ if __name__ == "__main__":
             lora_alpha=model_config.lora_alpha,
             lora_dropout=model_config.lora_dropout,
             num_labelers=args.num_labelers,
-            lora_type=args.lora_type)
+            lora_type=args.lora_type,
+            lora_personalize_strategy=args.lora_personalize_strategy)
         print("LoRA model")
         print(model)
     else:
@@ -465,7 +470,7 @@ if __name__ == "__main__":
             if args.selected_labeler == "personalized" and not args.eval_mode:
                 # Modify the pre-trained LoRA parameters to fit the personalized reward model
                 print("Converting LoRA parameters to PISA parameters")
-                combined_state_dict = convert_lora_checkpoint_to_pisa(combined_state_dict, args.num_labelers)
+                combined_state_dict = convert_lora_checkpoint_to_plas(combined_state_dict, args.num_labelers, args.lora_personalize_strategy)
 
             # Load the combined state dict into your model
             model.load_state_dict(combined_state_dict)
