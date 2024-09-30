@@ -12,53 +12,35 @@ ACCELERATE_LOG_LEVEL=info
 # model_name='EleutherAI/gpt-j-6b'
 model_name='meta-llama/Meta-Llama-3-8B'
 
-# accelerate launch --config_file configs/deepspeed_zero2.yaml --num_processes=1 --main_process_port=${port} src/reward_modeling.py \
-#     --model_name_or_path EleutherAI/gpt-j-6b \
-#     --dataset_name openai/summarize_from_feedback \
-#     --dataset_subset comparisons \
-#     --selected_labeler 4 \
-#     --output_dir ./exp/gpt-j-6b-Reward/lr-5e-5-3epochs-lorar32/debug \
-#     --per_device_train_batch_size 8 \
-#     --num_train_epochs 3 \
-#     --gradient_accumulation_steps 4 \
-#     --remove_unused_columns False \
-#     --gradient_checkpointing True \
-#     --bf16 true \
-#     --learning_rate 5.0e-5 \
-#     --logging_steps 5 \
-#     --eval_strategy steps \
-#     --eval_steps 0.2 \
-#     --max_length 2048 \
-#     --use_peft \
-#     --lora_r 32 \
-#     --lora_alpha 16 \
-#     --lora_task_type SEQ_CLS \
-#     --report_to wandb \
+######## Reward Model output directory ########
+output_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/lora_all_warmup'
 
 # Train the model
-accelerate launch --config_file configs/deepspeed_zero2.yaml --num_processes=4 --main_process_port=${port} src/reward_modeling.py \
-    --model_name_or_path EleutherAI/gpt-j-6b \
+accelerate launch --config_file configs/deepspeed_zero2.yaml --num_processes=1 --main_process_port=${port} src/reward_modeling.py \
+    --model_name_or_path ${model_name} \
     --dataset_name openai/summarize_from_feedback \
     --dataset_subset comparisons \
-    --selected_labeler personalized \
-    --output_dir ./exp/gpt-j-6b-Reward/lr-5e-5-3epochs-lorar32/pslora-kernel-multigpu \
-    --per_device_train_batch_size 32 \
+    --selected_labeler all \
+    --output_dir ${output_dir} \
+    --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 16 \
     --num_train_epochs 3 \
     --gradient_accumulation_steps 8 \
     --remove_unused_columns False \
     --gradient_checkpointing True \
     --bf16 true \
+    --warmup_ratio 0.1 \
     --learning_rate 5.0e-5 \
     --logging_steps 1 \
     --eval_strategy steps \
     --eval_steps 0.1 \
-    --save_strategy epoch \
+    --save_strategy steps \
+    --save_steps 0.1 \
     --max_length 2048 \
     --lora_r 32 \
     --lora_alpha 16 \
     --lora_task_type SEQ_CLS \
     --lora_target_modules q_proj v_proj \
-    --lora_type kernel \
+    --lora_type lora \
     --save_only_model True \
     --report_to wandb \

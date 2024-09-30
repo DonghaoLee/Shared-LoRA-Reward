@@ -1,5 +1,5 @@
 # Set which GPU devices to be visible to the process, --num_processes should be adjusted accordingly
-export CUDA_VISIBLE_DEVICES="3"
+export CUDA_VISIBLE_DEVICES="0"
 export WANDB_PROJECT="ensemble reward model with LoRA"
 
 port=$(shuf -i 6000-9000 -n 1)
@@ -14,7 +14,8 @@ model_name='meta-llama/Meta-Llama-3-8B'
 
 ######## Reward Model checkpoint directory ########
 # checkpoint_dir='./exp/gpt-j-6b-Reward/lr-5e-5-3epochs-lorar32/lora/checkpoint-420'
-checkpoint_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/lora_all/checkpoint-420'
+# checkpoint_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/lora_all/checkpoint-420'
+checkpoint_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/lora_all_warmup/checkpoint-63'
 num_safe_tensors=4      # Number of safe tensors to load, this is 4 for the llama3-8b model and 3 for the gpt-j-6b model
 # Get the number of digits for the total number of files
 num_digits=$(printf "%05g" ${num_safe_tensors})
@@ -25,7 +26,7 @@ do
 done
 
 ######## Reward Model output directory ########
-output_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/pslora_ft'
+output_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/pslora_ft_warmup'
 
 ######## Reward Model training parameters ########
 learning_rate=5.0e-5
@@ -40,12 +41,12 @@ accelerate launch --config_file configs/deepspeed_zero2.yaml --num_processes=1 -
     --checkpoint_paths ${checkpoint_paths} \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 8 \
-    --num_train_epochs 1 \
+    --num_train_epochs 3 \
     --gradient_accumulation_steps 8 \
     --remove_unused_columns False \
     --gradient_checkpointing True \
     --bf16 true \
-    --learning_rate 1.67e-5 \
+    --learning_rate 5e-5 \
     --logging_steps 1 \
     --eval_strategy steps \
     --eval_steps 0.2 \
