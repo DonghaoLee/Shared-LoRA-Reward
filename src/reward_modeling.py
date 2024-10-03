@@ -42,12 +42,21 @@ from trl import (
 from trl.extras.dataset_formatting import conversations_formatting_function
 
 from utils import reddit_comp_top_N, reddit_prompt_template
-from pslora import LinearLayer_PSLoRA, convert_linear_layer_to_lora, only_optimize_lora_parameters
+from pslora import (
+    LinearLayer_PSLoRA,
+    convert_linear_layer_to_lora,
+    only_optimize_lora_parameters,
+    convert_lora_checkpoint_to_plas
+)
 
 
 tqdm.pandas()
 
+<<<<<<< HEAD
 os.environ["WANDB_PROJECT"] = "federated LoRA"
+=======
+# os.environ["WANDB_PROJECT"] = "ensemble reward model with LoRA"
+>>>>>>> bfb82f16480fff7142082efc3032c02b33194ff1
 # os.environ["WANDB_PROJECT"] = "PSLoRA_RewardModel_Debugging"
 
 warnings.simplefilter("once")
@@ -81,6 +90,10 @@ class RewardScriptArguments:
     lora_type: str = field(
         default="lora",
         metadata={"help": "The type of LoRA to use. Options: pslora, kernel, svd"},
+    )
+    lora_personalize_strategy: str = field(
+        default="personalized_A",
+        metadata={"help": "Which layer should be expanded to personalized structure. Options: personalized_A, personalized_B."},
     )
     eval_mode: bool = field(
         default=False,
@@ -195,7 +208,7 @@ class PSRewardTrainer(RewardTrainer):
         #         " implement your own compute_loss method."
         #     )
 
-        # Fine the sub-module that is a LinearLayer_PSLoRA
+        # Find the sub-module that is a LinearLayer_PSLoRA
         for name, module in model.named_modules():
             if isinstance(module, LinearLayer_PSLoRA):
                 module.labeler_index = inputs["labeler_index"]
@@ -402,8 +415,8 @@ if __name__ == "__main__":
             
             # TODO: Filter out examples that are too long
             # shuffle the dataset
-            raw_trainset = raw_trainset.shuffle()
-            raw_testset = raw_testset.shuffle()
+            raw_trainset = raw_trainset.shuffle(seed=42)
+            raw_testset = raw_testset.shuffle(seed=42)
             for name, raw_validset in fine_grained_validset.items():
                 fine_grained_validset[name] = raw_validset.shuffle()
 
@@ -413,13 +426,20 @@ if __name__ == "__main__":
     else:
         train_dataset = raw_trainset
         if args.selected_labeler in ["all", "personalized"]:
-            # eval_dataset = fine_grained_validset
+            eval_dataset = fine_grained_validset
             # eval_dataset["all"] = raw_testset
-            eval_dataset = raw_testset
+            # eval_dataset = raw_testset
         else:
             eval_dataset = raw_testset
     print("Train Dataset: ", train_dataset)
     print("Eval Dataset: ", eval_dataset)
+    
+    ######################
+    # For Debugging
+    ######################
+    # # sample a small subset of the eval_dataset
+    # eval_dataset = eval_dataset.select(range(1280))
+    # print("Eval Dataset: ", eval_dataset)
 
     ######################
     # Model Initialization
@@ -437,7 +457,8 @@ if __name__ == "__main__":
             lora_alpha=model_config.lora_alpha,
             lora_dropout=model_config.lora_dropout,
             num_labelers=args.num_labelers,
-            lora_type=args.lora_type)
+            lora_type=args.lora_type,
+            lora_personalize_strategy=args.lora_personalize_strategy)
         print("LoRA model")
         print(model)
     else:
@@ -455,37 +476,58 @@ if __name__ == "__main__":
     if args.checkpoint_paths is not None:
         model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
     
-    if args.eval_mode:
-        # model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
-        print(fine_grained_validset)
-        eval_dataset = fine_grained_validset
-        data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
-        trainer = PSRewardTrainer(
-            model=model,
-            tokenizer=tokenizer,
-            data_collator=data_collator,
-            args=config,
-            train_dataset=None,
-            eval_dataset=eval_dataset,
-            peft_config=None,
-        )
-        metrics = trainer.evaluate()
-        if isinstance(eval_dataset, dict):
-            # Get the name of each fine-grained evaluation subset
-            eval_subset_names = list(eval_dataset.keys())
-            # Get the number of examples in each fine-grained evaluation subset
-            eval_subset_sizes = [len(eval_dataset[eval_subset_name]) for eval_subset_name in eval_subset_names]
-            # Get the accuracy of each fine-grained evaluation subset from the metrics
-            eval_subset_accuracies = [metrics[f"eval_{eval_subset_name}_accuracy"] for eval_subset_name in eval_subset_names]
-            # Get the loss of each fine-grained evaluation subset from the metrics
-            eval_subset_losses = [metrics[f"eval_{eval_subset_name}_loss"] for eval_subset_name in eval_subset_names]
-            # Get the average accuracy and loss of all fine-grained evaluation subsets, weighted by the number of examples
-            metrics["eval_all_accuracy"] = sum([size * accuracy for size, accuracy in zip(eval_subset_sizes, eval_subset_accuracies)]) / sum(eval_subset_sizes)
-            metrics["eval_all_loss"] = sum([size * loss for size, loss in zip(eval_subset_sizes, eval_subset_losses)]) / sum(eval_subset_sizes)
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
-        print(metrics)
-        exit()
+    if args.checkpoint_paths is not None:
+        # Load the model from the output directory
+        def load_multiple_safetensor_checkpoints(model, checkpoint_paths):
+            combined_state_dict = {}
+            
+            for checkpoint_path in checkpoint_paths:
+                print(f"Loading checkpoint from {checkpoint_path}")
+                state_dict = load_file(checkpoint_path)
+                combined_state_dict.update(state_dict)
+            
+            if args.selected_labeler == "personalized" and not args.eval_mode:
+                # Modify the pre-trained LoRA parameters to fit the personalized reward model
+                print("Converting LoRA parameters to PISA parameters")
+                combined_state_dict = convert_lora_checkpoint_to_plas(combined_state_dict, args.num_labelers, args.lora_personalize_strategy)
+
+            # Load the combined state dict into your model
+            model.load_state_dict(combined_state_dict)
+            
+            return model
+        model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
+        
+        if args.eval_mode:
+            data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
+            trainer = PSRewardTrainer(
+                model=model,
+                tokenizer=tokenizer,
+                data_collator=data_collator,
+                args=config,
+                train_dataset=None,
+                eval_dataset=eval_dataset,
+                peft_config=None,
+            )
+            metrics = trainer.evaluate()
+            # Compute the average accuracy and loss of all fine-grained evaluation subsets
+            warnings.warn("[Merge Subset Evaluation] Fine-grained evaluation subsets.")
+            if isinstance(eval_dataset, dict):
+                # Get the name of each fine-grained evaluation subset
+                eval_subset_names = list(eval_dataset.keys())
+                # Get the number of examples in each fine-grained evaluation subset
+                eval_subset_sizes = [len(eval_dataset[eval_subset_name]) for eval_subset_name in eval_subset_names]
+                # Get the accuracy of each fine-grained evaluation subset from the metrics
+                eval_subset_accuracies = [metrics[f"eval_{eval_subset_name}_accuracy"] for eval_subset_name in eval_subset_names]
+                # Get the loss of each fine-grained evaluation subset from the metrics
+                eval_subset_losses = [metrics[f"eval_{eval_subset_name}_loss"] for eval_subset_name in eval_subset_names]
+                # Get the average accuracy and loss of all fine-grained evaluation subsets, weighted by the number of examples
+                metrics["eval_all_accuracy"] = sum([size * accuracy for size, accuracy in zip(eval_subset_sizes, eval_subset_accuracies)]) / sum(eval_subset_sizes)
+                metrics["eval_all_loss"] = sum([size * loss for size, loss in zip(eval_subset_sizes, eval_subset_losses)]) / sum(eval_subset_sizes)
+            trainer.log_metrics("eval", metrics)
+            trainer.save_metrics("eval", metrics)
+            
+            print(metrics)
+            exit()
 
     ##########
     # Training
