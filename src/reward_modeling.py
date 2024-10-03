@@ -47,7 +47,7 @@ from pslora import LinearLayer_PSLoRA, convert_linear_layer_to_lora, only_optimi
 
 tqdm.pandas()
 
-os.environ["WANDB_PROJECT"] = "ensemble reward model with LoRA"
+os.environ["WANDB_PROJECT"] = "federated LoRA"
 # os.environ["WANDB_PROJECT"] = "PSLoRA_RewardModel_Debugging"
 
 warnings.simplefilter("once")
@@ -241,6 +241,19 @@ class PSRewardTrainer(RewardTrainer):
         else:
             super().visualize_samples(num_print_samples)
 
+# Load the model from the output directory
+def load_multiple_safetensor_checkpoints(model, checkpoint_paths):
+    combined_state_dict = {}
+    
+    for checkpoint_path in checkpoint_paths:
+        print(f"Loading checkpoint from {checkpoint_path}")
+        state_dict = load_file(checkpoint_path)
+        combined_state_dict.update(state_dict)
+    
+    # Load the combined state dict into your model
+    model.load_state_dict(combined_state_dict)
+    
+    return model
 
 
 if __name__ == "__main__":
@@ -439,22 +452,13 @@ if __name__ == "__main__":
         print("LoRA model")
         print(model)
 
+    if args.checkpoint_paths is not None:
+        model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
     
     if args.eval_mode:
-        # Load the model from the output directory
-        def load_multiple_safetensor_checkpoints(model, checkpoint_paths):
-            combined_state_dict = {}
-            
-            for checkpoint_path in checkpoint_paths:
-                print(f"Loading checkpoint from {checkpoint_path}")
-                state_dict = load_file(checkpoint_path)
-                combined_state_dict.update(state_dict)
-            
-            # Load the combined state dict into your model
-            model.load_state_dict(combined_state_dict)
-            
-            return model
-        model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
+        # model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
+        print(fine_grained_validset)
+        eval_dataset = fine_grained_validset
         data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
         trainer = PSRewardTrainer(
             model=model,
