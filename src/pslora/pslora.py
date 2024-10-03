@@ -306,7 +306,7 @@ def convert_linear_layer_to_lora(model,
                                  lora_dropout=0,
                                  num_labelers=5,
                                  lora_type='lora',
-                                 personalize_strategy='personalized_A'):
+                                 lora_personalize_strategy='personalized_A'):
     replace_name = []
     for name, module in model.named_modules():
         # what is part_module_name is a list of strings?
@@ -317,19 +317,19 @@ def convert_linear_layer_to_lora(model,
         module = recursive_getattr(model, name)
         tmp = LinearLayer_PSLoRA(
             module.weight, lora_r, lora_alpha, lora_dropout,
-            num_labelers, lora_type, personalize_strategy,
+            num_labelers, lora_type, lora_personalize_strategy,
             module.bias).to(module.weight.dtype).to(module.weight.device)
         recursive_setattr(model, name, tmp)
     return model
 
 
-def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_strategy='personalized_A'):
+def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, lora_personalize_strategy='personalized_A'):
     replace_name = []
     # Get all the layer names from the checkpoint
     names = list(checkpoint.keys())
     for name in names:
         # if any([key in name for key in target_modules]):
-        if personalize_strategy == 'personlized_A':
+        if lora_personalize_strategy == 'personalized_A':
             if 'lora_A' in name:
                 replace_name.append(name)
                 plas_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
