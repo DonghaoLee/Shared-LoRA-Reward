@@ -13,6 +13,63 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+def convert_linear_layer_to_lora(model,
+                                 target_modules,              # target modules to convert to LoRA
+                                 lora_r=0,
+                                 lora_alpha=1,
+                                 lora_dropout=0,
+                                 num_labelers=5,
+                                 lora_type='lora',
+                                 personalize_strategy='personalized_A'):
+    replace_name = []
+    for name, module in model.named_modules():
+        # what is part_module_name is a list of strings?
+        # if isinstance(module, nn.Linear) and part_module_name in name:
+        if isinstance(module, nn.Linear) and any([key in name for key in target_modules]):
+            replace_name.append(name)
+    for name in replace_name:
+        module = recursive_getattr(model, name)
+        tmp = LinearLayer_PSLoRA(
+            module.weight, lora_r, lora_alpha, lora_dropout,
+            num_labelers, lora_type, personalize_strategy,
+            module.bias).to(module.weight.dtype).to(module.weight.device)
+        recursive_setattr(model, name, tmp)
+    return model
+
+
+def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_strategy='personalized_A'):
+    replace_name = []
+    # Get all the layer names from the checkpoint
+    names = list(checkpoint.keys())
+    for name in names:
+        # if any([key in name for key in target_modules]):
+        if personalize_strategy == 'personlized_A':
+            if 'lora_A' in name:
+                replace_name.append(name)
+                plas_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+                plas_lora_A_name = name.replace('lora_A.weight', 'lora_A')
+                checkpoint[plas_lora_A_name] = plas_lora_A
+                del checkpoint[name]
+        else:
+            if 'lora_B' in name:
+                replace_name.append(name)
+                plas_lora_B = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+                plas_lora_B_name = name.replace('lora_B.weight', 'lora_B')
+                checkpoint[plas_lora_B_name] = plas_lora_B
+                del checkpoint[name]
+    return checkpoint
+
+
+def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
+    # turn off the gradient of all the parameters except the LoRA parameters
+    for name, param in model.named_parameters():
+        if "lora_A" in name or "lora_B" in name or "lora_kernel" in name or "lora_singular" in name:
+            param.requires_grad = True
+        elif any([key in name for key in force_optimize_params]):
+            param.requires_grad = True
+        else:
+            param.requires_grad = False
+    return model
 
 class LinearLayer_PSLoRA(nn.Module):
     # an simple implementation of LoRA
@@ -297,62 +354,3 @@ def recursive_setattr(model, module_name, module):
     for name in split_list[:-1]:
         output = getattr(output, name)
     output.__setattr__(split_list[-1], module)
-
-
-def convert_linear_layer_to_lora(model,
-                                 target_modules,              # target modules to convert to LoRA
-                                 lora_r=0,
-                                 lora_alpha=1,
-                                 lora_dropout=0,
-                                 num_labelers=5,
-                                 lora_type='lora',
-                                 personalize_strategy='personalized_A'):
-    replace_name = []
-    for name, module in model.named_modules():
-        # what is part_module_name is a list of strings?
-        # if isinstance(module, nn.Linear) and part_module_name in name:
-        if isinstance(module, nn.Linear) and any([key in name for key in target_modules]):
-            replace_name.append(name)
-    for name in replace_name:
-        module = recursive_getattr(model, name)
-        tmp = LinearLayer_PSLoRA(
-            module.weight, lora_r, lora_alpha, lora_dropout,
-            num_labelers, lora_type, personalize_strategy,
-            module.bias).to(module.weight.dtype).to(module.weight.device)
-        recursive_setattr(model, name, tmp)
-    return model
-
-
-def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_strategy='personalized_A'):
-    replace_name = []
-    # Get all the layer names from the checkpoint
-    names = list(checkpoint.keys())
-    for name in names:
-        # if any([key in name for key in target_modules]):
-        if personalize_strategy == 'personlized_A':
-            if 'lora_A' in name:
-                replace_name.append(name)
-                plas_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
-                plas_lora_A_name = name.replace('lora_A.weight', 'lora_A')
-                checkpoint[plas_lora_A_name] = plas_lora_A
-                del checkpoint[name]
-        else:
-            if 'lora_B' in name:
-                replace_name.append(name)
-                plas_lora_B = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
-                plas_lora_B_name = name.replace('lora_B.weight', 'lora_B')
-                checkpoint[plas_lora_B_name] = plas_lora_B
-                del checkpoint[name]
-    return checkpoint
-
-
-def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
-    # turn off the gradient of all the parameters except the LoRA parameters
-    for name, param in model.named_parameters():
-        if "lora_A" in name or "lora_B" in name or "lora_kernel" in name or "lora_singular" in name:
-            param.requires_grad = True
-        elif any([key in name for key in force_optimize_params]):
-            param.requires_grad = True
-        else:
-            param.requires_grad = False
-    return model

@@ -1,6 +1,6 @@
 # Set which GPU devices to be visible to the process, --num_processes should be adjusted accordingly
-export CUDA_VISIBLE_DEVICES="5"
-export WANDB_PROJECT="PSLoRA"
+export CUDA_VISIBLE_DEVICES="0"
+# export WANDB_PROJECT="PSLoRA"
 
 port=$(shuf -i 6000-9000 -n 1)
 echo $port
@@ -9,13 +9,17 @@ echo $port
 ACCELERATE_LOG_LEVEL=info
 
 ######## Reward Model base models ########
-# model_name='EleutherAI/gpt-j-6b'
-model_name='meta-llama/Meta-Llama-3-8B'
+model_name='EleutherAI/gpt-j-6b'
+# model_name='meta-llama/Meta-Llama-3-8B'
+
+######## Dataset ########
+# dataset_name='openai/summarize_from_feedback'
+dataset_name='nvidia/HelpSteer2'
 
 ######## Reward Model checkpoint directory ########
-# checkpoint_dir='./exp/gpt-j-6b-Reward/lr-5e-5-3epochs-lorar32/lora/checkpoint-210'
+checkpoint_dir='./exp/gpt-j-6b-Reward/lr-5e-5-3epochs-lorar32/lora/checkpoint-210'
 # checkpoint_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/lora_all/checkpoint-630'           # 3 epochs, vanilla LoRA
-checkpoint_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/pslora/checkpoint-630'               # 3 epochs, PS-LoRA
+# checkpoint_dir='./exp/llama3-8b-Reward/lr-5e-5-3epochs-lorar32/pslora/checkpoint-630'               # 3 epochs, PS-LoRA
 num_safe_tensors=4      # Number of safe tensors to load, this is 4 for the llama3-8b model and 3 for the gpt-j-6b model
 # Get the number of digits for the total number of files
 num_digits=$(printf "%05g" ${num_safe_tensors})
@@ -28,7 +32,7 @@ done
 # Evaluate the model
 python src/reward_modeling.py \
     --model_name_or_path ${model_name} \
-    --dataset_name openai/summarize_from_feedback \
+    --dataset_name ${dataset_name} \
     --dataset_subset comparisons \
     --selected_labeler personalized \
     --output_dir ${checkpoint_dir} \
@@ -52,5 +56,5 @@ python src/reward_modeling.py \
     --lora_target_modules q_proj v_proj \
     --lora_type lora \
     --save_only_model True \
-    --report_to wandb \
+    # --report_to wandb \
     --eval_mode True \
