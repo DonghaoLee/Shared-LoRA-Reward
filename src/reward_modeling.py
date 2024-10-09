@@ -28,6 +28,13 @@ from transformers import (
     PreTrainedModel,
     PreTrainedTokenizerBase,
 )
+from transformers.utils import (
+    SAFE_WEIGHTS_NAME,
+    WEIGHTS_NAME,
+    is_peft_available,
+    is_safetensors_available,
+    logging,
+)
 
 from trl import (
     ModelConfig,
@@ -47,14 +54,18 @@ from pslora import (
     convert_lora_checkpoint_to_plas
 )
 
+if is_safetensors_available():
+    import safetensors.torch
+
+if is_peft_available():
+    from peft import PeftModel
+
 
 tqdm.pandas()
-
-os.environ["WANDB_PROJECT"] = "federated LoRA"
-# os.environ["WANDB_PROJECT"] = "ensemble reward model with LoRA"
-# os.environ["WANDB_PROJECT"] = "PSLoRA_RewardModel_Debugging"
-
 warnings.simplefilter("once")
+TRAINING_ARGS_NAME = "training_args.bin"
+logger = logging.get_logger(__name__)
+
 
 @dataclass
 class RewardScriptArguments:
@@ -187,8 +198,9 @@ class RewardDataCollatorWithPadding:
 
 
 class PSRewardTrainer(RewardTrainer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, layers_to_save, **kwargs):
         super().__init__(*args, **kwargs)
+        self.layers_to_save = layers_to_save
     
     def compute_loss(
         self,
@@ -249,19 +261,58 @@ class PSRewardTrainer(RewardTrainer):
         else:
             super().visualize_samples(num_print_samples)
 
-# Load the model from the output directory
-def load_multiple_safetensor_checkpoints(model, checkpoint_paths):
-    combined_state_dict = {}
+    def get_partial_state_dict(self, state_dict=None):
+        """
+        Construct the partial state dict to save only the layers that have gradients.
+        Specifically, we only save the LoRA layers and the last score layer in this task.
+
+        Args:
+            state_dict (`Optional[Dict[str, torch.Tensor]]`, defaults to `None`):
+                The state dict of the model.
+        """
+        if self.layers_to_save is not None:
+            # self.layers_to_save is a list of layer name patterns (e.g., ["lora", "score"])
+            state_dict = {k: v for k, v in state_dict.items() if any(layer_name in k for layer_name in self.layers_to_save)}
+        return state_dict
     
-    for checkpoint_path in checkpoint_paths:
-        print(f"Loading checkpoint from {checkpoint_path}")
-        state_dict = load_file(checkpoint_path)
-        combined_state_dict.update(state_dict)
-    
-    # Load the combined state dict into your model
-    model.load_state_dict(combined_state_dict)
-    
-    return model
+    def _save(self, output_dir: Optional[str] = None, state_dict=None):
+        # If we are executing this function, we are the process zero, so we don't check for that.
+        output_dir = output_dir if output_dir is not None else self.args.output_dir
+        os.makedirs(output_dir, exist_ok=True)
+        logger.info(f"Saving model checkpoint to {output_dir}")
+
+        supported_classes = (PreTrainedModel,) if not is_peft_available() else (PreTrainedModel, PeftModel)
+        # Save a trained model and configuration using `save_pretrained()`.
+        # They can then be reloaded using `from_pretrained()`
+        if not isinstance(self.model, supported_classes):
+            if state_dict is None:
+                state_dict = self.model.state_dict()
+            state_dict = self.get_partial_state_dict(state_dict)
+
+            if isinstance(self.accelerator.unwrap_model(self.model), supported_classes):
+                self.accelerator.unwrap_model(self.model).save_pretrained(
+                    output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+                )
+            else:
+                logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
+                if self.args.save_safetensors:
+                    safetensors.torch.save_file(
+                        state_dict, os.path.join(output_dir, SAFE_WEIGHTS_NAME), metadata={"format": "pt"}
+                    )
+                else:
+                    torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
+        else:
+            state_dict = self.get_partial_state_dict(state_dict)
+            self.model.save_pretrained(
+                output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
+            )
+
+        if self.tokenizer is not None:
+            self.tokenizer.save_pretrained(output_dir)
+
+        # Good practice: save your training arguments together with the trained model
+        torch.save(self.args, os.path.join(output_dir, TRAINING_ARGS_NAME))
+
 
 
 if __name__ == "__main__":
@@ -318,14 +369,6 @@ if __name__ == "__main__":
     #############################
     train_dataset, eval_dataset = get_dataset(args, config, tokenizer)
 
-    # for i in range(10):
-    #     print('index:', i)
-    #     for key, value in train_dataset[i].items():
-    #         print(key, value)
-    #     print()
-
-    # exit()
-    
     ######################
     # For Debugging
     ######################
@@ -364,9 +407,6 @@ if __name__ == "__main__":
             num_labelers=-1)
         print("LoRA model")
         print(model)
-
-    if args.checkpoint_paths is not None:
-        model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
     
     if args.checkpoint_paths is not None:
         # Load the model from the output directory
@@ -435,6 +475,7 @@ if __name__ == "__main__":
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             peft_config=None,
+            layers_to_save=["lora", "score"],
         )
     else:
         # trainer = RewardTrainer(
@@ -458,6 +499,7 @@ if __name__ == "__main__":
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
             peft_config=None,
+            layers_to_save=["lora", "score"],
         )
 
     for name, param in trainer.model.named_parameters():
