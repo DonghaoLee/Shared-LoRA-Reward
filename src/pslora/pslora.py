@@ -13,18 +13,72 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+def recursive_getattr(model, module_name):
+    """
+    Recursively get the attribute of a module.
+    Args:
+        model (`torch.nn.Module`)
+            The model to get the attribute from.
+        module_name (`str`)
+            The name of the module to get the attribute from.
+    """
+    split_list = module_name.split('.')
+    output = model
+    for name in split_list:
+        output = getattr(output, name)
+    return output
+
+
+def recursive_setattr(model, module_name, module):
+    """
+    Recursively set the attribute of a module.
+    Args:
+        model (`torch.nn.Module`)
+            The model to set the attribute in.
+        module_name (`str`)
+            The name of the module to set the attribute in.
+        module (`torch.nn.Module`)
+            The module to set the attribute to.
+    """
+    split_list = module_name.split('.')
+    output = model
+    for name in split_list[:-1]:
+        output = getattr(output, name)
+    output.__setattr__(split_list[-1], module)
+
+
 def convert_linear_layer_to_lora(model,
-                                 target_modules,              # target modules to convert to LoRA
+                                 target_modules,
                                  lora_r=0,
                                  lora_alpha=1,
                                  lora_dropout=0,
                                  num_labelers=5,
                                  lora_type='lora',
                                  personalize_strategy='personalized_A'):
+    """
+    Convert the linear layer within the pre-trained model to LoRA layer.
+    Args:
+        model (`torch.nn.Module`)
+            The model to convert the linear layer to LoRA layer.
+        target_modules (`List[str]`)
+            The list of module names to match the module names for which LoRA should be applied.
+        lora_r (`int`)
+            The reduced dimension of LoRA.
+        lora_alpha (`int`)
+            The scaling factor of LoRA.
+        lora_dropout (`float`)
+            The dropout rate of LoRA.
+        num_labelers (`int`)
+            The number of labelers to consider.
+        lora_type (`str`)
+            The architecture of LoRA to use. Currently supports 'lora', 'kernel', and 'svd'.
+        personalize_strategy (`str`)
+            The strategy to use for personalization. Currently supports 'personalized_A' and 'personalized_B'.
+    """
     replace_name = []
     for name, module in model.named_modules():
-        # what is part_module_name is a list of strings?
-        # if isinstance(module, nn.Linear) and part_module_name in name:
+        # target_modules is a list of name patterns to match the module names for which LoRA should be applied. Example: ['q_proj', 'v_proj']
         if isinstance(module, nn.Linear) and any([key in name for key in target_modules]):
             replace_name.append(name)
     for name in replace_name:
@@ -38,22 +92,35 @@ def convert_linear_layer_to_lora(model,
 
 
 def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_strategy='personalized_A'):
+    """
+    Convert the LoRA checkpoint to PSLoRA state dict. This function is used when we want to initialize the PSLoRA model with a pre-trained LoRA model (with gloabl A and B matrices).
+    Args:
+        checkpoint (`Dict[str, torch.Tensor]`)
+            The checkpoint of the LoRA model.
+        num_labelers (`int`)
+            The number of labelers to consider.
+        personalize_strategy (`str`)
+            The strategy to use for personalization. Currently supports 'personalized_A' and 'personalized_B'.
+    """
     replace_name = []
     # Get all the layer names from the checkpoint
     names = list(checkpoint.keys())
     for name in names:
-        # if any([key in name for key in target_modules]):
         if personalize_strategy == 'personlized_A':
+            # If the strategy is 'personalized_A', then we need to copy the A matrix for each labeler
             if 'lora_A' in name:
                 replace_name.append(name)
                 plas_lora_A = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+                # Replace the name of the layer to match the PSLoRA's architecture which uses nn.Parameter instead of nn.Linear
                 plas_lora_A_name = name.replace('lora_A.weight', 'lora_A')
                 checkpoint[plas_lora_A_name] = plas_lora_A
                 del checkpoint[name]
         else:
+            # If the strategy is 'personalized_B', then we need to copy the B matrix for each labeler
             if 'lora_B' in name:
                 replace_name.append(name)
                 plas_lora_B = torch.transpose(checkpoint[name], 0, 1).unsqueeze(0).repeat(num_labelers, 1, 1)
+                # Replace the name of the layer to match the PSLoRA's architecture which uses nn.Parameter instead of nn.Linear
                 plas_lora_B_name = name.replace('lora_B.weight', 'lora_B')
                 checkpoint[plas_lora_B_name] = plas_lora_B
                 del checkpoint[name]
@@ -61,8 +128,17 @@ def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_stra
 
 
 def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
+    """
+    Correctly set the `requires_grad` flag to only optimize the LoRA parameters in the model.
+    Args:
+        model (`torch.nn.Module`)
+            The model to optimize the LoRA parameters.
+        force_optimize_params (`List[str]`)
+            The list of parameter names to force optimize. Example: ['score'] (i.e., the final score layer for sequence classification).
+    """
     # turn off the gradient of all the parameters except the LoRA parameters
     for name, param in model.named_parameters():
+        # If the parameter name contains 'lora_*', then set `requires_grad` to True
         if "lora_A" in name or "lora_B" in name or "lora_kernel" in name or "lora_singular" in name:
             param.requires_grad = True
         elif any([key in name for key in force_optimize_params]):
@@ -71,11 +147,10 @@ def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
             param.requires_grad = False
     return model
 
+
 class LinearLayer_PSLoRA(nn.Module):
     # an simple implementation of LoRA
     # for now only support Linear Layer
-    
-    # labeler_index = None  # Labelers being activated in the forward pass (per batch)
     
     def __init__(self,
                  weight,
@@ -173,6 +248,8 @@ class LinearLayer_PSLoRA(nn.Module):
         self.reset_parameters()
         # disable the original weight gradient
         self.weight.requires_grad = False
+        if self.bias is not None:
+            self.bias.requires_grad = False
         # fuse LoRA to the original weight
         self.fuse_lora = False
 
@@ -191,29 +268,44 @@ class LinearLayer_PSLoRA(nn.Module):
                 if self.lora_type == 'kernel':
                     nn.init.kaiming_uniform_(self.lora_kernel.weight, a=math.sqrt(5))
                 elif self.lora_type == 'svd':
-                    nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+                    # singular matrix is initialized to a diagonal matrix with ones
+                    # nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+                    pass
             else:
+                # TODO: When initializing the A matrices for each labeler, we have the following options:
+                # 1. Initialize the 3-dimensional tensor using the `kaiming_uniform_()` all at once
+                # 2. Initialize the 3-dimensional tensor using the `kaiming_uniform_()` one by one for each labeler on the first dimension
+                # 3. Initialize a 2-dimensional tensor using the `kaiming_uniform_()` and then expand it to the 3-dimensional tensor so that all labelers' A matrices are the same
                 nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 if self.lora_type == 'kernel':
                     nn.init.kaiming_uniform_(self.lora_kernel, a=math.sqrt(5))
                 elif self.lora_type == 'svd':
-                    nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+                    # singular matrix is initialized to a diagonal matrix with ones
+                    # nn.init.kaiming_uniform_(self.lora_singular, a=math.sqrt(5))
+                    pass
             nn.init.zeros_(self.lora_B.weight)
         else:
             nn.init.kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
             if self.num_labelers <= 0:
                 nn.init.zeros_(self.lora_B.weight)
                 if self.lora_type == 'kernel':
-                    nn.init.zeros_(self.lora_kernel.weight)
+                    # kernel matrix is initialized to a diagonal matrix with ones
+                    # nn.init.zeros_(self.lora_kernel.weight)
+                    nn.init.kaiming_uniform_(self.lora_kernel.weight, a=math.sqrt(5))
                 elif self.lora_type == 'svd':
-                    nn.init.zeros_(self.lora_singular)
+                    # singular matrix is initialized to a diagonal matrix with ones
+                    # nn.init.zeros_(self.lora_singular)
+                    pass
             else:
                 nn.init.zeros_(self.lora_B)
                 if self.lora_type == 'kernel':
-                    nn.init.zeros_(self.lora_kernel)
+                    # kernel matrix is initialized to a diagonal matrix with ones
+                    # nn.init.zeros_(self.lora_kernel)
+                    nn.init.kaiming_uniform_(self.lora_kernel, a=math.sqrt(5))
                 elif self.lora_type == 'svd':
-                    nn.init.zeros_(self.lora_singular)
-
+                    # singular matrix is initialized to a diagonal matrix with ones
+                    # nn.init.zeros_(self.lora_singular)
+                    pass
 
     def fuse_lora_weight(self):
         # FIXME: Add support for PSLoRa when using additional dimension of labelers
@@ -320,37 +412,3 @@ class LinearLayer_PSLoRA(nn.Module):
             result = result.to(torch_result_dtype)
 
             return result
-
-
-def recursive_getattr(model, module_name):
-    """
-    Recursively get the attribute of a module.
-    Args:
-        model (`torch.nn.Module`)
-            The model to get the attribute from.
-        module_name (`str`)
-            The name of the module to get the attribute from.
-    """
-    split_list = module_name.split('.')
-    output = model
-    for name in split_list:
-        output = getattr(output, name)
-    return output
-
-
-def recursive_setattr(model, module_name, module):
-    """
-    Recursively set the attribute of a module.
-    Args:
-        model (`torch.nn.Module`)
-            The model to set the attribute in.
-        module_name (`str`)
-            The name of the module to set the attribute in.
-        module (`torch.nn.Module`)
-            The module to set the attribute to.
-    """
-    split_list = module_name.split('.')
-    output = model
-    for name in split_list[:-1]:
-        output = getattr(output, name)
-    output.__setattr__(split_list[-1], module)

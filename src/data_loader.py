@@ -4,6 +4,7 @@ from trl.extras.dataset_formatting import conversations_formatting_function
 
 from utils import reddit_comp_top_N, reddit_prompt_template, helpsteer_seperate, helpsteer_prompt_template
 
+
 def get_dataset(args, config, tokenizer):
     flag_summarize = 'summarize_from_feedback' in args.dataset_name
     flag_help = 'HelpSteer' in args.dataset_name
@@ -59,18 +60,18 @@ def get_dataset(args, config, tokenizer):
             else:
                 raw_trainset = raw_trainset.map(
                     lambda x: {"chosen": reddit_prompt_template(x, "chosen"),
-                            "rejected": reddit_prompt_template(x, "rejected")},
+                               "rejected": reddit_prompt_template(x, "rejected")},
                     num_proc=config.dataset_num_proc
                 )
                 raw_testset = raw_testset.map(
                     lambda x: {"chosen": reddit_prompt_template(x, "chosen"),
-                            "rejected": reddit_prompt_template(x, "rejected")},
+                               "rejected": reddit_prompt_template(x, "rejected")},
                     num_proc=config.dataset_num_proc
                 )
                 for name, raw_validset in fine_grained_validset.items():
                     fine_grained_validset[name] = raw_validset.map(
                         lambda x: {"chosen": reddit_prompt_template(x, "chosen"),
-                                "rejected": reddit_prompt_template(x, "rejected")},
+                                   "rejected": reddit_prompt_template(x, "rejected")},
                         num_proc=config.dataset_num_proc
                     )
                 
@@ -98,7 +99,6 @@ def get_dataset(args, config, tokenizer):
                     batched=True,
                     num_proc=config.dataset_num_proc,
                 )
-            
             # Select the labeler
             if args.selected_labeler == "all" or args.selected_labeler == "personalized":
                 pass
@@ -121,8 +121,6 @@ def get_dataset(args, config, tokenizer):
         train_dataset = raw_trainset
         if args.selected_labeler in ["all", "personalized"]:
             eval_dataset = fine_grained_validset
-            # eval_dataset["all"] = raw_testset
-            # eval_dataset = raw_testset
         else:
             eval_dataset = raw_testset
     print("Train Dataset: ", train_dataset)
