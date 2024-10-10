@@ -127,7 +127,7 @@ def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_stra
     return checkpoint
 
 
-def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
+def only_optimize_lora_parameters(model, lora_modules=['lora_A', 'lora_B', 'lora_kernel', 'lora_singular'], force_optimize_params=['score',]):
     """
     Correctly set the `requires_grad` flag to only optimize the LoRA parameters in the model.
     Args:
@@ -139,7 +139,8 @@ def only_optimize_lora_parameters(model, force_optimize_params=['score',]):
     # turn off the gradient of all the parameters except the LoRA parameters
     for name, param in model.named_parameters():
         # If the parameter name contains 'lora_*', then set `requires_grad` to True
-        if "lora_A" in name or "lora_B" in name or "lora_kernel" in name or "lora_singular" in name:
+        # if "lora_A" in name or "lora_B" in name or "lora_kernel" in name or "lora_singular" in name:
+        if any([key in name for key in lora_modules]):
             param.requires_grad = True
         elif any([key in name for key in force_optimize_params]):
             param.requires_grad = True

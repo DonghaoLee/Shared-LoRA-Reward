@@ -23,10 +23,13 @@ from safetensors import safe_open
 from safetensors.torch import load_file
 from accelerate import Accelerator
 from tqdm import tqdm
-from transformers import AutoModelForSequenceClassification, AutoTokenizer, HfArgumentParser
 from transformers import (
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizerBase,
+    HfArgumentParser,
+    set_seed,
 )
 from transformers.utils import (
     SAFE_WEIGHTS_NAME,
@@ -100,6 +103,10 @@ class RewardScriptArguments:
     lora_personalize_strategy: str = field(
         default="personalized_A",
         metadata={"help": "Which layer should be expanded to personalized structure. Options: personalized_A, personalized_B."},
+    )
+    lora_optimize_modules: Optional[List[str]] = field(
+        default=None,
+        metadata={"help": "The modules to optimize for LoRA. Default is all modules."},
     )
     eval_mode: bool = field(
         default=False,
@@ -320,6 +327,9 @@ if __name__ == "__main__":
     args, config, model_config = parser.parse_args_into_dataclasses()
     config.gradient_checkpointing_kwargs = dict(use_reentrant=False)
 
+    # Set seed for reproducibility
+    set_seed(config.seed)
+
     ###################
     # Model & Tokenizer
     ###################
@@ -465,7 +475,10 @@ if __name__ == "__main__":
     # Training
     ##########
     if args.selected_labeler == "personalized":
-        only_optimize_lora_parameters(model)
+        if args.lora_optimize_modules is not None:
+            only_optimize_lora_parameters(model, args.lora_optimize_modules)
+        else:
+            only_optimize_lora_parameters(model)
         data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
         trainer = PSRewardTrainer(
             model=model,
@@ -488,8 +501,10 @@ if __name__ == "__main__":
         # )
         # # Now you can print the trainable parameters
         # trainer.model.print_trainable_parameters()
-        
-        only_optimize_lora_parameters(model)
+        if args.lora_optimize_modules is not None:
+            only_optimize_lora_parameters(model, args.lora_optimize_modules)
+        else:
+            only_optimize_lora_parameters(model)
         data_collator = RewardDataCollatorWithPadding(tokenizer, max_length=config.max_length)
         trainer = PSRewardTrainer(
             model=model,
