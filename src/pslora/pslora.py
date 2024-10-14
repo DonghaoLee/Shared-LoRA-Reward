@@ -106,7 +106,7 @@ def convert_lora_checkpoint_to_plas(checkpoint, num_labelers=5, personalize_stra
     # Get all the layer names from the checkpoint
     names = list(checkpoint.keys())
     for name in names:
-        if personalize_strategy == 'personlized_A':
+        if personalize_strategy == 'personalized_A':
             # If the strategy is 'personalized_A', then we need to copy the A matrix for each labeler
             if 'lora_A' in name:
                 replace_name.append(name)
@@ -276,8 +276,13 @@ class LinearLayer_PSLoRA(nn.Module):
                 # TODO: When initializing the A matrices for each labeler, we have the following options:
                 # 1. Initialize the 3-dimensional tensor using the `kaiming_uniform_()` all at once
                 # 2. Initialize the 3-dimensional tensor using the `kaiming_uniform_()` one by one for each labeler on the first dimension
+                # nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
                 # 3. Initialize a 2-dimensional tensor using the `kaiming_uniform_()` and then expand it to the 3-dimensional tensor so that all labelers' A matrices are the same
-                nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
+                lora_A_init = torch.empty(self.lora_A.shape[1], self.lora_A.shape[2])
+                nn.init.kaiming_uniform_(lora_A_init, a=math.sqrt(5))
+                expanded_A = lora_A_init.unsqueeze(0).repeat(self.lora_A.shape[0], 1, 1)
+                self.lora_A.data = expanded_A
+
                 if self.lora_type == 'kernel':
                     nn.init.kaiming_uniform_(self.lora_kernel, a=math.sqrt(5))
                 elif self.lora_type == 'svd':
