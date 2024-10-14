@@ -4,10 +4,12 @@ from lora import LinearLayer_LoRA
 from datasets import Dataset
 from typing import Callable, Literal, Optional, Union
 
+
 def eigen_preference(num, d):
     x = torch.randint(d, size=[num,])
     x = torch.nn.functional.one_hot(x)
     return x
+
 
 def gaussian_preference(num, d):
     x = torch.randint(d, size=[num,])
@@ -122,6 +124,7 @@ def reddit_comp_top_N(dataset, N_worker=5, seed=42):
 
     return downsampled_trainset, downsampled_validset, worker_index_map, fine_grained_validset
 
+
 def helpsteer_seperate(dataset, args):
     N_worker = 5
     reward_names = [
@@ -175,6 +178,7 @@ def helpsteer_seperate(dataset, args):
     
     return raw_trainset, raw_testset, fine_grained_validset
 
+
 def reddit_prompt_template(example, response_type: Literal["chosen", "rejected"]):
     """Generate the prompt for the Reddit TL;DR dataset.
     Args:
@@ -187,28 +191,6 @@ def reddit_prompt_template(example, response_type: Literal["chosen", "rejected"]
     worker = example['worker']
 
     subreddit = info["subreddit"]
-    title = info["title"]
-    post = info["post"]
-    assert choice in [0, 1], "The choice must be either 0 or 1."
-
-    if response_type == "chosen":
-        summary = summaries[choice]['text']             # chosen response
-    else:
-        summary = summaries[1 - choice]['text']         # rejected response
-    
-    prompt = f"SUBREDDIT: r/{subreddit}\nTITLE: {title}\nPOST: {post}\nTL;DR: {summary}"
-    
-    return prompt
-
-def helpsteer_prompt_template(example, response_type: Literal["chosen", "rejected"]):
-    """Generate the prompt for the HelpSteer2 dataset.
-    Args:
-        example: The example from the Reddit TL;DR dataset.
-        response_type: The type of response, either "chosen" or "rejected".
-    """
-    choice = example['choice']
-
-    subreddit = info["response"]
     title = info["title"]
     post = info["post"]
     assert choice in [0, 1], "The choice must be either 0 or 1."
