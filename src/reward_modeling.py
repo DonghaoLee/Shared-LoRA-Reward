@@ -28,6 +28,7 @@ from transformers import (
     AutoTokenizer,
     PreTrainedModel,
     PreTrainedTokenizerBase,
+    TrainerCallback,
     HfArgumentParser,
     set_seed,
 )
@@ -82,6 +83,9 @@ class RewardScriptArguments:
     )
     dataset_train_split: str = field(default="train", metadata={"help": "The dataset split to train on"})
     dataset_test_split: str = field(default="test", metadata={"help": "The dataset split to evaluate on"})
+    local_trainset_path: Optional[str] = field(default=None, metadata={"help": "Path to the local training dataset"})
+    local_testset_path: Optional[str] = field(default=None, metadata={"help": "Path to the local test dataset"})
+    local_validset_path: Optional[str] = field(default=None, metadata={"help": "Path to the local validation dataset"})
     config: str = field(default=None, metadata={"help": "Path to the optional config file"})
     gradient_checkpointing_use_reentrant: bool = field(
         default=False,
@@ -202,6 +206,15 @@ class RewardDataCollatorWithPadding:
             margin = torch.tensor(margin, dtype=torch.float)
             batch["margin"] = margin
         return batch
+
+
+class PreTrainingEvalCallback(TrainerCallback):
+    def on_train_begin(self, args, state, control, **kwargs):
+        """
+        Event called at the beginning of training.
+        """
+        # This will run the evaluation before training begins
+        control.should_evaluate = True
 
 
 class PSRewardTrainer(RewardTrainer):
@@ -434,7 +447,10 @@ if __name__ == "__main__":
                 combined_state_dict = convert_lora_checkpoint_to_plas(combined_state_dict, args.num_labelers, args.lora_personalize_strategy)
 
             # Load the combined state dict into your model
-            model.load_state_dict(combined_state_dict)
+            model_state_dict = model.state_dict()
+            print("Load the following modules:", combined_state_dict.keys())
+            model_state_dict.update(combined_state_dict)
+            model.load_state_dict(model_state_dict)
             
             return model
         model = load_multiple_safetensor_checkpoints(model, args.checkpoint_paths)
@@ -446,10 +462,12 @@ if __name__ == "__main__":
                 tokenizer=tokenizer,
                 data_collator=data_collator,
                 args=config,
-                train_dataset=None,
+                train_dataset=train_dataset,
                 eval_dataset=eval_dataset,
                 peft_config=None,
+                layers_to_save=["lora", "score"],
             )
+            trainer.train()             # Bypass solution. Directly calling evaluate() may raise error that the model and the data are not on the same device.
             metrics = trainer.evaluate()
             # Compute the average accuracy and loss of all fine-grained evaluation subsets
             warnings.warn("[Merge Subset Evaluation] Fine-grained evaluation subsets.")
@@ -489,6 +507,7 @@ if __name__ == "__main__":
             eval_dataset=eval_dataset,
             peft_config=None,
             layers_to_save=["lora", "score"],
+            callbacks=[PreTrainingEvalCallback],
         )
     else:
         # trainer = RewardTrainer(
@@ -515,6 +534,7 @@ if __name__ == "__main__":
             eval_dataset=eval_dataset,
             peft_config=None,
             layers_to_save=["lora", "score"],
+            callbacks=[PreTrainingEvalCallback],
         )
 
     for name, param in trainer.model.named_parameters():

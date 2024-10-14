@@ -1,8 +1,8 @@
 from accelerate import PartialState
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict, Dataset, load_from_disk
 from trl.extras.dataset_formatting import conversations_formatting_function
 
-from utils import reddit_comp_top_N, reddit_prompt_template, helpsteer_seperate, helpsteer_prompt_template
+from utils import reddit_comp_top_N, reddit_prompt_template, helpsteer_seperate
 
 
 def get_dataset(args, config, tokenizer):
@@ -10,8 +10,13 @@ def get_dataset(args, config, tokenizer):
     flag_help = 'HelpSteer' in args.dataset_name
     
     if flag_summarize:
-        raw_datasets = load_dataset(args.dataset_name, args.dataset_subset)
-        raw_trainset, raw_testset, worker_dict, fine_grained_validset = reddit_comp_top_N(raw_datasets, args.num_labelers)
+        if args.local_trainset_path is None:
+            raw_datasets = load_dataset(args.dataset_name, args.dataset_subset)
+            raw_trainset, raw_testset, worker_dict, fine_grained_validset = reddit_comp_top_N(raw_datasets, args.num_labelers)
+        else:
+            raw_trainset = load_from_disk(args.local_trainset_path)
+            raw_testset = load_from_disk(args.local_testset_path)
+            fine_grained_validset = DatasetDict.load_from_disk(args.local_validset_path)
     elif flag_help:
         raw_datasets = load_dataset(args.dataset_name)
         raw_trainset, raw_testset, fine_grained_validset = helpsteer_seperate(raw_datasets, args)
@@ -109,8 +114,8 @@ def get_dataset(args, config, tokenizer):
             
             # TODO: Filter out examples that are too long
             # shuffle the dataset
-            raw_trainset = raw_trainset.shuffle(seed=42)
-            raw_testset = raw_testset.shuffle(seed=42)
+            raw_trainset = raw_trainset.shuffle(seed=config.seed)
+            raw_testset = raw_testset.shuffle(seed=config.seed)
             for name, raw_validset in fine_grained_validset.items():
                 fine_grained_validset[name] = raw_validset.shuffle()
 
