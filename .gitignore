@@ -1,6 +1,12 @@
 *.ckpt
 *.out
+*.log
 
 wandb/
 __pycache__/
 notebook/
+exp/
+data/
+src/peft/
+src/peft_local/
+scripts/
